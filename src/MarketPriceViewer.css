@@ -1,0 +1,641 @@
+.market-viewer-container {
+  padding: 24px 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease-out;
+  color: #ffffff !important;
+}
+
+.app-header {
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+}
+
+.app-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #eaeef6;
+  letter-spacing: 1px;
+}
+
+.app-subtitle {
+  color: #a0aec0;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.data-source {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  font-size: 14px;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.filter-card, .table-card {
+  background: #252a3a !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #313a55 !important;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.filter-card {
+  margin-bottom: 20px;
+  background: linear-gradient(145deg, #1e2847, #252a3a) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+  padding: 20px !important;
+}
+
+.filter-card:hover, .table-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+.stats-row {
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: #252a3a !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #313a55 !important;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.stat-card:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+.price-range-text {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: #a0aec0;
+}
+
+.reload-button {
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.3s;
+  background: #313a55;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reload-button:hover {
+  background: #3e4868;
+  color: #eaeef6;
+}
+
+/* 对Ant Design组件的自定义样式 */
+.ant-table {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #1a2035 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-bottom: 1px solid #313a55 !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #313a55 !important;
+  transition: all 0.2s;
+  color: #ffffff !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: rgba(139, 92, 246, 0.05) !important;
+}
+
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background: #252a3a !important;
+}
+
+.ant-tabs-nav::before {
+  border-bottom: 1px solid #313a55 !important;
+}
+
+.ant-tabs-tab {
+  color: #a0aec0 !important;
+  background: #1f2536 !important;
+  border: 1px solid #313a55 !important;
+  transition: all 0.3s;
+  margin-right: 2px !important;
+  border-radius: 4px 4px 0 0 !important;
+}
+
+.ant-tabs-tab:hover {
+  color: #eaeef6 !important;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active {
+  background: #252a3a !important;
+  border-bottom-color: #252a3a !important;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #eaeef6 !important;
+  font-weight: 500;
+}
+
+.ant-tabs-ink-bar {
+  background: #4c82e6 !important;
+}
+
+.ant-slider-track {
+  background-color: #4c82e6 !important;
+}
+
+.ant-slider:hover .ant-slider-track {
+  background-color: #5d8feb !important;
+}
+
+.ant-slider-handle {
+  border-color: #4c82e6 !important;
+  background: #252a3a !important;
+}
+
+.ant-slider-handle:focus {
+  box-shadow: 0 0 0 3px rgba(76, 130, 230, 0.2) !important;
+}
+
+.ant-select-selector {
+  background: #1f2536 !important;
+  border-color: #313a55 !important;
+  color: #eaeef6 !important;
+}
+
+.ant-select-selection-item {
+  color: #eaeef6 !important;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: #4c82e6 !important;
+  box-shadow: 0 0 0 2px rgba(76, 130, 230, 0.2) !important;
+}
+
+.ant-input {
+  background: #1f2536 !important;
+  border-color: #313a55 !important;
+  color: #eaeef6 !important;
+}
+
+.ant-input:focus, .ant-input-focused {
+  border-color: #4c82e6 !important;
+  box-shadow: 0 0 0 2px rgba(76, 130, 230, 0.2) !important;
+}
+
+.ant-input::placeholder {
+  color: #616c8c !important;
+}
+
+.ant-switch {
+  background: #313a55 !important;
+}
+
+.ant-switch-checked {
+  background: #4c82e6 !important;
+}
+
+.ant-statistic-title {
+  color: #a0aec0 !important;
+}
+
+.ant-statistic-content {
+  color: #eaeef6 !important;
+}
+
+.ant-pagination-item {
+  background: #1f2536 !important;
+  border-color: #313a55 !important;
+}
+
+.ant-pagination-item a {
+  color: #eaeef6 !important;
+}
+
+.ant-pagination-item-active {
+  background: #313a55 !important;
+  border-color: #4c82e6 !important;
+}
+
+.ant-pagination-item-active a {
+  color: #eaeef6 !important;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #313a55 !important;
+}
+
+.ant-card-head-title, .ant-card-extra {
+  color: #eaeef6 !important;
+}
+
+.profit-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.profit-tag-positive {
+  background: rgba(52, 199, 89, 0.15);
+  color: #4cd964;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.profit-tag-negative {
+  background: rgba(255, 69, 58, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 69, 58, 0.3);
+}
+
+.category-tag {
+  background: rgba(76, 130, 230, 0.15);
+  border: 1px solid rgba(76, 130, 230, 0.3);
+  color: #5d8feb;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 13px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .market-viewer-container {
+    padding: 16px 8px;
+  }
+  
+  .app-title {
+    font-size: 24px;
+  }
+  
+  .stats-row {
+    margin-bottom: 16px;
+  }
+  
+  .filter-card {
+    margin-bottom: 16px;
+  }
+}
+
+/* 为稀有度添加样式 - 确保这些类名与getRarityClass函数返回的类名匹配 */
+.rarity-normal {
+  background-color: #9ca3af !important;
+  color: white !important;
+}
+
+.rarity-improved {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.rarity-rare {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.rarity-epic {
+  background-color: #f97316 !important;
+  color: white !important;
+}
+
+.rarity-legendary {
+  background-color: #8b5cf6 !important;
+  color: white !important;
+}
+
+/* 修改列高亮颜色 */
+.ant-table-column-sort {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+/* 修复搜索框样式 */
+.ant-input-search .ant-input {
+  background-color: #1f2536 !important;
+  border: 1px solid #313a55 !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  padding: 8px 12px !important;
+  height: auto !important;
+}
+
+.ant-input-search .ant-input-search-button {
+  background-color: #4c82e6 !important;
+  border-color: #4c82e6 !important;
+}
+
+/* 确保输入框文字颜色正确 */
+.ant-input-group-addon {
+  color: #e2e8f0 !important;
+  background-color: #2d3748 !important;
+  border-color: #313a55 !important;
+}
+
+/* 修改滑块样式使其有非线性感觉 */
+.ant-slider-mark-text {
+  color: #e2e8f0 !important;
+}
+
+.ant-slider-dot {
+  border-color: #4c82e6 !important;
+  background-color: #1f2536 !important;
+}
+
+.ant-slider-dot-active {
+  border-color: #4c82e6 !important;
+}
+
+/* 2. 修复下拉框中的字体颜色 */
+.ant-select-dropdown {
+  background-color: #1f2536 !important;
+  border: 1px solid #313a55 !important;
+}
+
+.ant-select-item {
+  color: #ffffff !important;
+}
+
+.ant-select-item-option-selected {
+  background-color: #2d3748 !important;
+}
+
+.ant-select-item-option-active {
+  background-color: #3e4868 !important;
+}
+
+/* 4. 彻底修复搜索框样式 */
+.ant-input-search {
+  display: block !important;
+  width: 100% !important;
+}
+
+.ant-input-search .ant-input {
+  height: 38px !important;
+  background-color: #1f2536 !important;
+  border: 1px solid #313a55 !important;
+  color: #ffffff !important;
+  padding: 8px 12px !important;
+}
+
+.ant-input-search .ant-input-group .ant-input-affix-wrapper {
+  background-color: #1f2536 !important;
+  border: 1px solid #313a55 !important;
+}
+
+.ant-input-search .ant-input-group .ant-input-affix-wrapper input {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+.ant-input-search .ant-input-search-button {
+  height: 38px !important;
+  border-radius: 0 4px 4px 0 !important;
+  background-color: #4c82e6 !important;
+  border-color: #4c82e6 !important;
+}
+
+/* 确保搜索框样式在所有页面组件中生效 */
+.ant-input-affix-wrapper {
+  background-color: #1f2536 !important;
+  border-color: #313a55 !important;
+}
+
+.ant-input-affix-wrapper input {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* 修复数字输入框溢出问题 */
+.filter-card .ant-input-group-wrapper {
+  width: 100%;
+}
+
+.filter-card .ant-input-number {
+  width: 100% !important;
+}
+
+.filter-card .ant-input {
+  font-size: 14px;
+  padding: 4px 8px !important;
+}
+
+/* 修复行高溢出问题 */
+.filter-card .ant-row {
+  flex-wrap: wrap;
+}
+
+/* 调整分类过滤和名称搜索的宽度 */
+@media (max-width: 992px) {
+  .filter-card .ant-col {
+    margin-bottom: 15px;
+  }
+  
+  .filter-card .ant-input-search {
+    width: 100%;
+  }
+}
+
+/* 改进输入框和选择器样式 */
+.filter-card .ant-input,
+.filter-card .ant-select-selector {
+  border-radius: 6px !important;
+  height: 38px !important;
+  border: 1px solid #3d4663 !important;
+}
+
+.filter-card .ant-select-selector {
+  padding: 4px 11px !important;
+  display: flex;
+  align-items: center;
+}
+
+/* 调整滑块段落样式 */
+.ant-slider-mark-text {
+  padding-top: 8px;
+  font-size: 12px;
+}
+
+/* 调整栅格和间距 */
+.filter-card .ant-row {
+  margin-bottom: 4px;
+}
+
+/* 最小/最大输入框样式美化 */
+.filter-card .ant-input-group-addon {
+  border-radius: 6px 0 0 6px !important;
+  background: linear-gradient(145deg, #273354, #222b47) !important;
+  padding: 0 8px !important;
+}
+
+.filter-card .ant-input-group-wrapper + .ant-input-group-wrapper {
+  margin-left: 8px;
+}
+
+/* 可点击单元格样式 */
+.clickable-cell {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.clickable-cell:hover {
+  background-color: rgba(76, 130, 230, 0.1);
+}
+
+.expand-hint {
+  font-size: 12px;
+  color: #8b5cf6;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.clickable-cell:hover .expand-hint {
+  opacity: 1;
+}
+
+/* 价格详情面板样式 */
+.price-detail-panel {
+  padding: 16px 8px;
+  background: linear-gradient(145deg, #1e2847, #1a2035);
+  border-radius: 8px;
+}
+
+.price-detail-card {
+  background-color: #252a3a !important;
+  border: 1px solid #313a55 !important;
+}
+
+.price-detail-card .ant-card-head {
+  background-color: #1f2536 !important;
+  border-bottom: 1px solid #313a55 !important;
+  min-height: 40px;
+}
+
+.price-detail-card .ant-card-head-title {
+  padding: 8px 0;
+}
+
+.price-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+}
+
+.price-item-buy {
+  background-color: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.price-item-sell {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+/* 添加脚本控制相关样式 */
+.script-control-card {
+  background: linear-gradient(145deg, #263045, #1e2536) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #363f5a !important;
+  padding: 12px !important;
+  margin-top: 10px;
+}
+
+.script-log {
+  background: #131722;
+  border-radius: 4px;
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: monospace;
+  color: #a0aec0;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 16px;
+}
+
+.script-log pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* 在表格中标记已选中的行 */
+.ant-table-row.ant-table-row-selected > td {
+  background-color: rgba(76, 130, 230, 0.08) !important;
+}
+
+.ant-table-row.ant-table-row-selected:hover > td {
+  background-color: rgba(76, 130, 230, 0.15) !important;
+}
+
+/* 调整标签页样式，使其更加突出 */
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: linear-gradient(145deg, #3e4868, #313a55) !important;
+  border-color: #4c82e6 !important;
+}
+
+/* 导出图片相关样式 */
+.export-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.image-export-table {
+  border-collapse: collapse;
+  width: 100%;
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-export-table th,
+.image-export-table td {
+  padding: 8px 12px;
+  border: 1px solid #334155;
+  text-align: left;
+}
+
+.image-export-table th {
+  background-color: #0f172a;
+  font-weight: 600;
+}
+
+.image-export-table tr:nth-child(even) {
+  background-color: #0f172a;
+}
+
+.image-export-table tr:hover {
+  background-color: #334155;
+} 

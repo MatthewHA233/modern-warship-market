@@ -1,0 +1,6 @@
+back_button = "./templates/modern_warship/market_items/back_button.png"
+market_icon = "./templates/modern_warship/market_items/market_icon.png"
+legendary = "./templates/legendary.png"
+rare = "./templates/rare.png"
+common = "./templates/common.png"
+loading = "./templates/loading.png"

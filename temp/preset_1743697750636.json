@@ -1,0 +1,857 @@
+{
+  "name": "临时预设",
+  "items": [
+    {
+      "name": "图-222",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[土]TF-2000",
+      "category": "舰艇"
+    },
+    {
+      "name": "[俄]莫斯科",
+      "category": "舰艇"
+    },
+    {
+      "name": "[日]摩耶(DDG-179)",
+      "category": "舰艇"
+    },
+    {
+      "name": "SP-12“游隼”",
+      "category": "无人机"
+    },
+    {
+      "name": "AD-12“蜻蜓”",
+      "category": "直升机"
+    },
+    {
+      "name": "B-2A“幽灵”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "KF-21“猎鹰”",
+      "category": "攻击机"
+    },
+    {
+      "name": "P-750“陨石”-M",
+      "category": "导弹"
+    },
+    {
+      "name": "[日]大鲸(55-513)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[韩]正祖大王",
+      "category": "舰艇"
+    },
+    {
+      "name": "SR-71D“黑鸟”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[中]十堰",
+      "category": "舰艇"
+    },
+    {
+      "name": "飞鸿-97A",
+      "category": "无人机"
+    },
+    {
+      "name": "彩虹-4",
+      "category": "无人机"
+    },
+    {
+      "name": "[BAE系统]螳螂",
+      "category": "无人机"
+    },
+    {
+      "name": "MH-47N“支奴干”",
+      "category": "直升机"
+    },
+    {
+      "name": "灰背隼HM2",
+      "category": "直升机"
+    },
+    {
+      "name": "等离子炮(203 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "[拜拉克塔尔]游骑兵",
+      "category": "无人机"
+    },
+    {
+      "name": "直-20J",
+      "category": "直升机"
+    },
+    {
+      "name": "[泛空间]龙翼",
+      "category": "直升机"
+    },
+    {
+      "name": "F-15 JX",
+      "category": "战斗机"
+    },
+    {
+      "name": "HPLS 100",
+      "category": "对空武器"
+    },
+    {
+      "name": "MQ-20“复仇者”",
+      "category": "无人机"
+    },
+    {
+      "name": "图-95M5“熊”-H",
+      "category": "轰炸机"
+    },
+    {
+      "name": "虎鲸XLUUV",
+      "category": "无人舰艇"
+    },
+    {
+      "name": "[美]新罕布什尔(BB-1011)",
+      "category": "舰艇"
+    },
+    {
+      "name": "海鹰西格玛(30 mm)",
+      "category": "自动炮"
+    },
+    {
+      "name": "KUS-FS",
+      "category": "无人机"
+    },
+    {
+      "name": "P.125",
+      "category": "战斗机"
+    },
+    {
+      "name": "F-2超改",
+      "category": "攻击机"
+    },
+    {
+      "name": "A-222“海岸”(130 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "飞鸿",
+      "category": "直升机"
+    },
+    {
+      "name": "AP不死鸟1983",
+      "category": "直升机"
+    },
+    {
+      "name": "虎鲨(533 mm)",
+      "category": "鱼雷发射器"
+    },
+    {
+      "name": "F-28“雄猫”Ⅱ",
+      "category": "攻击机"
+    },
+    {
+      "name": "PAK DA M",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[美]宪法II(DDR-2000)",
+      "category": "舰艇"
+    },
+    {
+      "name": "半人马-155(155 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "AP风神2021",
+      "category": "直升机"
+    },
+    {
+      "name": "RIM-162D",
+      "category": "对空武器"
+    },
+    {
+      "name": "93式防空导弹",
+      "category": "对空武器"
+    },
+    {
+      "name": "[韩]忠南",
+      "category": "舰艇"
+    },
+    {
+      "name": "TRG-230(230 mm)",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "[英]格拉斯哥(26型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "AH-1Z“蝰蛇”",
+      "category": "直升机"
+    },
+    {
+      "name": "米格-41M“超级管鼻鸌”",
+      "category": "攻击机"
+    },
+    {
+      "name": "鸣镝-22",
+      "category": "无人机"
+    },
+    {
+      "name": "EC-665“虎”",
+      "category": "直升机"
+    },
+    {
+      "name": "攻击-11“利剑”",
+      "category": "无人机"
+    },
+    {
+      "name": "歼-25“鬼鸟”",
+      "category": "攻击机"
+    },
+    {
+      "name": "V-280“勇士”",
+      "category": "直升机"
+    },
+    {
+      "name": "米-171SH",
+      "category": "直升机"
+    },
+    {
+      "name": "JAS-39“鹰狮”",
+      "category": "攻击机"
+    },
+    {
+      "name": "F-117A“夜鹰”",
+      "category": "攻击机"
+    },
+    {
+      "name": "[俄]戈尔什科夫海军上将",
+      "category": "舰艇"
+    },
+    {
+      "name": "[西飞]轰-6N“雷神”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "F-90",
+      "category": "攻击机"
+    },
+    {
+      "name": "SDB-1",
+      "category": "轰炸机"
+    },
+    {
+      "name": "XQ-58“女武神”",
+      "category": "无人机"
+    },
+    {
+      "name": "231工程",
+      "category": "战斗机"
+    },
+    {
+      "name": "YF-23“黑寡妇”Ⅱ",
+      "category": "战斗机"
+    },
+    {
+      "name": "2030型(30mm)",
+      "category": "对空武器"
+    },
+    {
+      "name": "[泛空间]蜘蛛翼",
+      "category": "无人机"
+    },
+    {
+      "name": "F-7",
+      "category": "攻击机"
+    },
+    {
+      "name": "[欧瑞康]GDF-4 (35 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "暗剑",
+      "category": "无人机"
+    },
+    {
+      "name": "苏-35S“超级侧卫”",
+      "category": "攻击机"
+    },
+    {
+      "name": "FCAS",
+      "category": "攻击机"
+    },
+    {
+      "name": "直-21",
+      "category": "直升机"
+    },
+    {
+      "name": "米-35M“公鹿”-E",
+      "category": "直升机"
+    },
+    {
+      "name": "V-247“警惕”",
+      "category": "直升机"
+    },
+    {
+      "name": "[意]DDX",
+      "category": "舰艇"
+    },
+    {
+      "name": "[西飞]轰-8",
+      "category": "轰炸机"
+    },
+    {
+      "name": "PKXB(130 mm)",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "B-1B“枪骑兵”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[德]巴登·符腾堡(F125型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "ATN-51“黑死病”",
+      "category": "战斗机"
+    },
+    {
+      "name": "[博福斯]M/42(152 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "绝影-8",
+      "category": "直升机"
+    },
+    {
+      "name": "[俄]毒树(1199工程)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[拜拉克塔尔]红苹果",
+      "category": "无人机"
+    },
+    {
+      "name": "[BAE系统]暴风雨",
+      "category": "攻击机"
+    },
+    {
+      "name": "F21“阿尔忒弥斯”(533 mm)",
+      "category": "鱼雷发射器"
+    },
+    {
+      "name": "F/A-18E/F“超级大黄蜂”",
+      "category": "攻击机"
+    },
+    {
+      "name": "[日]出云",
+      "category": "舰艇"
+    },
+    {
+      "name": "KB-X",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[欧瑞康]HEL",
+      "category": "对空武器"
+    },
+    {
+      "name": "[英]83型",
+      "category": "舰艇"
+    },
+    {
+      "name": "SR-72“暗星”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "KAI-LAH",
+      "category": "直升机"
+    },
+    {
+      "name": "[中]杭州(956E型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[美]长滩(CGN-9)",
+      "category": "舰艇"
+    },
+    {
+      "name": "苏-47“金雕”",
+      "category": "攻击机"
+    },
+    {
+      "name": "[法]DEAC",
+      "category": "舰艇"
+    },
+    {
+      "name": "[俄]巴辛斯蒂海军上将",
+      "category": "舰艇"
+    },
+    {
+      "name": "海上打击",
+      "category": "导弹"
+    },
+    {
+      "name": "[日]秋月(DD-115)",
+      "category": "舰艇"
+    },
+    {
+      "name": "图-160M“海盗旗”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[丹尼尔]35DPG(35 mm)",
+      "category": "自动炮"
+    },
+    {
+      "name": "30式电磁炮(40 mm)",
+      "category": "自动炮"
+    },
+    {
+      "name": "苏-37“终结者”",
+      "category": "攻击机"
+    },
+    {
+      "name": "C-AS“铁穹”",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "快乐火箭炮",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "H/JJ30-8-300(300 mm)",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "OH-1“忍者”",
+      "category": "直升机"
+    },
+    {
+      "name": "Erlik-2050(127 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "[BAE系统]155/39 TMF(155 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "F-3",
+      "category": "攻击机"
+    },
+    {
+      "name": "直-19E“鸢”",
+      "category": "直升机"
+    },
+    {
+      "name": "RUR-5“阿斯洛克”C",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "“万发”近防炮(25 mm)",
+      "category": "对空武器"
+    },
+    {
+      "name": "[博福斯]L/50(120 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "[西]博尼法兹(F-110型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "A-22(140 mm)",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "幻影2000-5F",
+      "category": "攻击机"
+    },
+    {
+      "name": "A-10“雷电”Ⅱ",
+      "category": "攻击机"
+    },
+    {
+      "name": "JRNG-6近防系统",
+      "category": "对空武器"
+    },
+    {
+      "name": "[中]055A型",
+      "category": "舰艇"
+    },
+    {
+      "name": "[法]海洋复仇者",
+      "category": "舰艇"
+    },
+    {
+      "name": "复合阿帕奇",
+      "category": "直升机"
+    },
+    {
+      "name": "[罗克特桑]ASW",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "ATD-X“心神”",
+      "category": "战斗机"
+    },
+    {
+      "name": "JARI-USV-A“虎鲸”",
+      "category": "无人舰艇"
+    },
+    {
+      "name": "[中]麒麟(DDG-203)",
+      "category": "舰艇"
+    },
+    {
+      "name": "CIWS-Ⅱ(30 mm)",
+      "category": "对空武器"
+    },
+    {
+      "name": "UH-15A“超美洲狮”",
+      "category": "直升机"
+    },
+    {
+      "name": "HELMA-P",
+      "category": "对空武器"
+    },
+    {
+      "name": "P-BA“波塞冬”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "FQF-6000",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "[美]泰德·史蒂文斯(DDG-128)",
+      "category": "舰艇"
+    },
+    {
+      "name": "米格-31BM“猎狐犬”-A",
+      "category": "攻击机"
+    },
+    {
+      "name": "GTX-690",
+      "category": "导弹"
+    },
+    {
+      "name": "[俄]基洛夫",
+      "category": "舰艇"
+    },
+    {
+      "name": "[中]中船探索01(07X型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "苏-75“将军”",
+      "category": "攻击机"
+    },
+    {
+      "name": "太阳神激光",
+      "category": "对空武器"
+    },
+    {
+      "name": "[中]达州(052DM型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "PSF-01“天鹰”",
+      "category": "攻击机"
+    },
+    {
+      "name": "鱼-8",
+      "category": "导弹"
+    },
+    {
+      "name": "[美]迈克尔·蒙苏尔(DDG-1001)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[德]F127型",
+      "category": "舰艇"
+    },
+    {
+      "name": "ATMACA“雀鹰”",
+      "category": "导弹"
+    },
+    {
+      "name": "[中]四川(076型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[日]香取",
+      "category": "舰艇"
+    },
+    {
+      "name": "B-52H“同温层堡垒”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "卡-90“眼镜蛇”",
+      "category": "直升机"
+    },
+    {
+      "name": "[俄]台风",
+      "category": "舰艇"
+    },
+    {
+      "name": "[西飞]轰-18",
+      "category": "轰炸机"
+    },
+    {
+      "name": "歼-35“蓝鲨”",
+      "category": "攻击机"
+    },
+    {
+      "name": "THEL",
+      "category": "对空武器"
+    },
+    {
+      "name": "红旗-26",
+      "category": "导弹"
+    },
+    {
+      "name": "[日]伊邪那美",
+      "category": "舰艇"
+    },
+    {
+      "name": "寂静狩猎者",
+      "category": "对空武器"
+    },
+    {
+      "name": "台风MLS-NLOS",
+      "category": "自动炮"
+    },
+    {
+      "name": "Sahi-209 Block-II",
+      "category": "主炮"
+    },
+    {
+      "name": "MGM-140 NTACMS",
+      "category": "导弹"
+    },
+    {
+      "name": "[泛空间]阿尔戈纳斯",
+      "category": "舰艇"
+    },
+    {
+      "name": "P-1“复仇者”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "TB-001“双尾蝎”-A",
+      "category": "无人机"
+    },
+    {
+      "name": "OSU-35K(35 mm)",
+      "category": "对空武器"
+    },
+    {
+      "name": "格克德尼兹增程型",
+      "category": "对空武器"
+    },
+    {
+      "name": "[泛空间]百慕大",
+      "category": "舰艇"
+    },
+    {
+      "name": "[德]俾斯麦(H-41V)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[法]剑船",
+      "category": "舰艇"
+    },
+    {
+      "name": "[博福斯]40/L70 Mk.4",
+      "category": "自动炮"
+    },
+    {
+      "name": "[印尼]IFCX 260",
+      "category": "舰艇"
+    },
+    {
+      "name": "A-215“冰雹”M(122 mm)",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "TF-X“可汗”",
+      "category": "攻击机"
+    },
+    {
+      "name": "5-350“勇士”",
+      "category": "导弹"
+    },
+    {
+      "name": "苏-25UTG“蛙足”-D",
+      "category": "攻击机"
+    },
+    {
+      "name": "[俄]别尔哥罗德(K-329)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[美]哥伦比亚(SSBN-826)",
+      "category": "舰艇"
+    },
+    {
+      "name": "T-929 ATAK 2",
+      "category": "直升机"
+    },
+    {
+      "name": "彩虹-901",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "图-22M3M“逆火”-C",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[泛空间]菱蝠",
+      "category": "攻击机"
+    },
+    {
+      "name": "[博福斯]L/46(120 mm)",
+      "category": "主炮"
+    },
+    {
+      "name": "[中]058型",
+      "category": "舰艇"
+    },
+    {
+      "name": "[中]漯河(054B型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "SR-5 122/300",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "RPK-1“旋风”",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "[日]最上(FFM-1)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[西飞]轰-10“太阳黑子”",
+      "category": "轰炸机"
+    },
+    {
+      "name": "RBU-2500(212 mm)",
+      "category": "火箭炮/炸弹"
+    },
+    {
+      "name": "[泛空间]红朗姆",
+      "category": "舰艇"
+    },
+    {
+      "name": "灰鲭鲨",
+      "category": "导弹"
+    },
+    {
+      "name": "A-14B“申冤者”",
+      "category": "攻击机"
+    },
+    {
+      "name": "[美]阿肯色(CGN-41)",
+      "category": "舰艇"
+    },
+    {
+      "name": "歼-16“潜龙”",
+      "category": "攻击机"
+    },
+    {
+      "name": "歼轰-XX",
+      "category": "攻击机"
+    },
+    {
+      "name": "RD09“马林鱼”",
+      "category": "无人舰艇"
+    },
+    {
+      "name": "[泛空间]杀戮时刻",
+      "category": "攻击机"
+    },
+    {
+      "name": "[泛空间]折刀",
+      "category": "轰炸机"
+    },
+    {
+      "name": "[德]施佩伯爵海军上将",
+      "category": "舰艇"
+    },
+    {
+      "name": "[日]宙斯盾大和",
+      "category": "舰艇"
+    },
+    {
+      "name": "[中]利刃",
+      "category": "舰艇"
+    },
+    {
+      "name": "[法]PANG",
+      "category": "舰艇"
+    },
+    {
+      "name": "[俄]伊萨科夫海军上将",
+      "category": "舰艇"
+    },
+    {
+      "name": "[德]下萨克森(F126型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[泛空间]提顿",
+      "category": "舰艇"
+    },
+    {
+      "name": "双髻鲨",
+      "category": "直升机"
+    },
+    {
+      "name": "[日]天城",
+      "category": "舰艇"
+    },
+    {
+      "name": "[美]蒙大拿(BB-67)",
+      "category": "舰艇"
+    },
+    {
+      "name": "卡-50“黑鲨”",
+      "category": "直升机"
+    },
+    {
+      "name": "[法]蓝鲨",
+      "category": "舰艇"
+    },
+    {
+      "name": "CH-1“铜斑蛇”",
+      "category": "直升机"
+    },
+    {
+      "name": "[中]共青团员(1164E型)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[中]华清(BBE-01)",
+      "category": "舰艇"
+    },
+    {
+      "name": "[韩]KDDX-S",
+      "category": "舰艇"
+    },
+    {
+      "name": "[西]SMART 8000",
+      "category": "舰艇"
+    },
+    {
+      "name": "[泛空间]打击时刻",
+      "category": "攻击机"
+    }
+  ]
+}
