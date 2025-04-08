@@ -40,7 +40,7 @@ MARKET_UP = ((1400, 350), (1400, 900))    # 物品列表向上滑（显示上面
 
 # 补偿移动 - 用于物品识别失败后的重试
 COMPENSATION_MOVE_DOWN = ((1400, 600), (1400, 200))  # 短距离下滑
-COMPENSATION_MOVE_DOWN_LONG = ((1400, 800), (1400, 200))  # 更长距离下滑，用于第二次补偿尝试
+COMPENSATION_MOVE_DOWN_LONG = ((1400, 1000), (1400, 200))  # 更长距离下滑，用于第二次补偿尝试
 COMPENSATION_MOVE_UP = ((1400, 200), (1400, 600))    # 短距离上滑
 
 # 物品分类栏滑动
@@ -137,35 +137,35 @@ def compensation_move(times=1, after_delay=AFTER_SLIDE_DELAY, attempt_number=1, 
     参数:
     times - 保留此参数以兼容旧代码，但不再使用
     after_delay - 滑动后的延迟时间
-    attempt_number - 当前是第几次补偿尝试 (1-4)，超过4会循环回到第1次尝试
+    attempt_number - 当前是第几次补偿尝试 (1-5)，超过5会循环回到第1次尝试
     normal_scroll_times - 该物品的正常滑动次数
     """
-    # 计算实际尝试号码(1-4循环)
-    actual_attempt = ((attempt_number - 1) % 4) + 1
+    # 计算实际尝试号码(1-5循环)
+    actual_attempt = ((attempt_number - 1) % 5) + 1
     
     if actual_attempt == 1:
         # 第一次补偿尝试: 上滑一次
-        print(f"补偿移动 (尝试 {actual_attempt}/4) - 上滑一次")
+        print(f"补偿移动 (尝试 {actual_attempt}/5) - 上滑一次")
         slide(COMPENSATION_MOVE_UP[0], COMPENSATION_MOVE_UP[1], DEFAULT_DURATION, after_delay)
         click_friction_point()
     elif actual_attempt == 2:
         # 第二次补偿尝试: 更长距离下滑一次
-        print(f"补偿移动 (尝试 {actual_attempt}/4) - 更长距离下滑")
+        print(f"补偿移动 (尝试 {actual_attempt}/5) - 更长距离下滑")
         slide(COMPENSATION_MOVE_DOWN_LONG[0], COMPENSATION_MOVE_DOWN_LONG[1], DEFAULT_DURATION, after_delay)
         click_friction_point()
     elif actual_attempt == 3:
         # 第三次补偿尝试: 标准距离下滑一次
-        print(f"补偿移动 (尝试 {actual_attempt}/4) - 标准下滑")
+        print(f"补偿移动 (尝试 {actual_attempt}/5) - 标准下滑")
         slide(COMPENSATION_MOVE_DOWN[0], COMPENSATION_MOVE_DOWN[1], DEFAULT_DURATION, after_delay)
         click_friction_point()
-    else:  # actual_attempt == 4
+    elif actual_attempt == 4:
         # 第四次补偿尝试: 连续向上正常滑动多次
         # 比正常的寻找滑动多2次
         up_times = normal_scroll_times + 2
         if up_times < 2:  # 确保至少滑动2次
             up_times = 2
             
-        print(f"补偿移动 (尝试 {actual_attempt}/4) - 连续向上滑动{up_times}次 (比正常滑动多2次)")
+        print(f"补偿移动 (尝试 {actual_attempt}/5) - 连续向上滑动{up_times}次 (比正常滑动多2次)")
         
         for i in range(up_times):
             print(f"  - 向上滑动 ({i+1}/{up_times})")
@@ -177,6 +177,25 @@ def compensation_move(times=1, after_delay=AFTER_SLIDE_DELAY, attempt_number=1, 
             click_friction_point()
             
             if i < up_times - 1:
+                time.sleep(0.1)  # 连续滑动间隔减少到0.1秒
+    else:  # actual_attempt == 5
+        # 第五次补偿尝试: 模拟日常找物品时的下滑操作
+        down_times = normal_scroll_times
+        if down_times < 1:  # 确保至少滑动1次
+            down_times = 1
+            
+        print(f"补偿移动 (尝试 {actual_attempt}/5) - 模拟正常下滑{down_times}次")
+        
+        for i in range(down_times):
+            print(f"  - 向下滑动 ({i+1}/{down_times})")
+            # 使用正常的向下滑动
+            slide(MARKET_DOWN[0], MARKET_DOWN[1], DEFAULT_DURATION, 
+                  after_delay if i == down_times-1 else 0.2)  # 最后一次滑动使用完整延时
+            
+            # 每次滑动后点击阻力点
+            click_friction_point()
+            
+            if i < down_times - 1:
                 time.sleep(0.1)  # 连续滑动间隔减少到0.1秒
 
 def category_down(times=1, after_delay=AFTER_SLIDE_DELAY):
@@ -272,7 +291,8 @@ def interactive_mode():
             print("2. 测试第二次补偿移动 (长距离下滑+阻力点)")
             print("3. 测试第三次补偿移动 (标准下滑+阻力点)")
             print("4. 测试第四次补偿移动 (连续向上滑动+阻力点)")
-            print("5. 测试补偿移动完整循环 (1-4次)")
+            print("5. 测试第五次补偿移动 (模拟正常下滑+阻力点)")
+            print("6. 测试补偿移动完整循环 (1-5次)")
             print("q. 返回主菜单")
             
             sub_choice = input("请选择补偿移动类型: ")
@@ -282,20 +302,23 @@ def interactive_mode():
                 
             try:
                 if sub_choice == '5':
+                    # 测试第五次补偿移动
+                    compensation_move(1, AFTER_SLIDE_DELAY, 5, 2)  # 使用normal_scroll_times=2作为测试
+                elif sub_choice == '6':
                     # 测试完整循环
-                    print("执行补偿移动完整循环 (1-4次)...")
-                    for i in range(1, 5):
-                        compensation_move(1, AFTER_SLIDE_DELAY, i)
-                        if i < 4:
+                    print("执行补偿移动完整循环 (1-5次)...")
+                    for i in range(1, 6):
+                        compensation_move(1, AFTER_SLIDE_DELAY, i, 2)  # 使用normal_scroll_times=2作为测试
+                        if i < 5:
                             time.sleep(0.5)  # 每次尝试之间的间隔
                 else:
                     attempt_number = int(sub_choice)
-                    if 1 <= attempt_number <= 5:
+                    if 1 <= attempt_number <= 4:
                         compensation_move(1, AFTER_SLIDE_DELAY, attempt_number)
                     else:
-                        print("无效选项，请输入1-5或q")
+                        print("无效选项，请输入1-6或q")
             except ValueError:
-                print("输入无效，请输入1-5或q")
+                print("输入无效，请输入1-6或q")
         return True
     
     try:

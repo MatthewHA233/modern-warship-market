@@ -548,6 +548,45 @@ def save_price_data(item_name, category_name, price_data, csv_file_path=None):
         print(f"保存价格数据时出错: {str(e)}")
         return False
 
+def get_rarity_from_history(item_name, category_name):
+    """
+    从历史CSV文件中查找物品的稀有度
+    
+    参数:
+        item_name: 物品名称
+        category_name: 物品分类
+        
+    返回:
+        找到的稀有度，如果未找到则返回"未知"
+    """
+    try:
+        # 获取当前目录下的所有CSV文件
+        csv_files = [f for f in os.listdir("./market_data") if f.startswith("price_data_") and f.endswith(".csv")]
+        
+        # 按时间倒序排序，优先使用最新的数据
+        csv_files.sort(reverse=True)
+        
+        for csv_file in csv_files:
+            csv_path = os.path.join("./market_data", csv_file)
+            try:
+                with open(csv_path, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        if row['物品名称'] == item_name and row['物品分类'] == category_name:
+                            rarity = row['稀有度']
+                            if rarity and rarity != "未知":
+                                print(f"从历史数据中找到稀有度: {rarity}")
+                                return rarity
+            except Exception as e:
+                print(f"读取历史CSV文件时出错: {str(e)}")
+                continue
+        
+        print("未在历史数据中找到稀有度")
+        return "未知"
+    except Exception as e:
+        print(f"查找历史稀有度时出错: {str(e)}")
+        return "未知"
+
 def process_screenshot(screenshot_path, item_name="未知物品", category_name="未知分类"):
     """
     处理一张物品详情页截图，提取并保存所有价格区域
@@ -580,6 +619,10 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
     if not found_areas:
         print("未找到任何价格区域")
         return [], None, {}
+    
+    # 如果稀有度识别失败，尝试从历史数据中获取
+    if rarity_text == "未知":
+        rarity_text = get_rarity_from_history(item_name, category_name)
     
     # 在原图上标记所有区域
     img_with_markup = create_markup_image(img, found_areas, bid_count, listing_count, rarity_text)

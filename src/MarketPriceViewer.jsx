@@ -1113,6 +1113,8 @@ const MarketPriceViewer = () => {
           <th style="padding: 8px; border: 1px solid #334155; background: #0f172a;">最低售出价</th>
           <th style="padding: 8px; border: 1px solid #334155; background: #0f172a;">低买低卖溢价</th>
           <th style="padding: 8px; border: 1px solid #334155; background: #0f172a;">利润率</th>
+          <th style="padding: 8px; border: 1px solid #334155; background: #0f172a;">出价数量</th>
+          <th style="padding: 8px; border: 1px solid #334155; background: #0f172a;">上架数量</th>
         </tr>
       `;
       table.appendChild(thead);
@@ -1139,6 +1141,8 @@ const MarketPriceViewer = () => {
           <td style="padding: 8px; border: 1px solid #334155;">${item.minSelling.toLocaleString()}</td>
           <td style="padding: 8px; border: 1px solid #334155; ${item.spread > 0 ? 'color: #4ade80;' : 'color: #f87171;'}">${item.spread !== null ? item.spread.toLocaleString() : 'N/A'}</td>
           <td style="padding: 8px; border: 1px solid #334155; ${parseFloat(item.profitRatio) > 0 ? 'color: #4ade80;' : 'color: #f87171;'}">${item.profitRatio}</td>
+          <td style="padding: 8px; border: 1px solid #334155;">${item.bidCount || 0}</td>
+          <td style="padding: 8px; border: 1px solid #334155;">${item.listingCount || 0}</td>
         `;
         
         tbody.appendChild(tr);
