@@ -1079,6 +1079,43 @@ const MarketPriceViewer = () => {
     setExportLoading(true);
     
     try {
+      // 获取当前活跃文件的时间信息
+      const currentFile = recentFiles[activeFileIndex] || '';
+      let timePrefix = '';
+      
+      // 从文件名中提取时间信息 (例如 price_data_20250408_19.csv)
+      const matches = currentFile.match(/price_data_(\d{4})(\d{2})(\d{2})_(\d{2})\.csv/);
+      if (matches && matches.length >= 5) {
+        const hour = matches[4];
+        timePrefix = `[${hour}时]`;
+      }
+      
+      // 从选中的数据项中找出最早和最晚的更新时间
+      let earliestTimestamp = null;
+      let latestTimestamp = null;
+      
+      selectedItems.forEach(item => {
+        if (item.timestamp) {
+          const timestamp = item.timestamp;
+          if (!earliestTimestamp || timestamp < earliestTimestamp) {
+            earliestTimestamp = timestamp;
+          }
+          if (!latestTimestamp || timestamp > latestTimestamp) {
+            latestTimestamp = timestamp;
+          }
+        }
+      });
+      
+      // 构建时间范围字符串
+      let timeRangeDisplay = '';
+      if (earliestTimestamp && latestTimestamp) {
+        if (earliestTimestamp === latestTimestamp) {
+          timeRangeDisplay = `数据更新时间: ${earliestTimestamp}`;
+        } else {
+          timeRangeDisplay = `数据更新时间范围: ${earliestTimestamp} ~ ${latestTimestamp}`;
+        }
+      }
+      
       // 创建一个临时容器来放置要导出的表格
       const container = document.createElement('div');
       container.className = 'export-container';
@@ -1092,7 +1129,10 @@ const MarketPriceViewer = () => {
       
       // 添加标题
       const header = document.createElement('div');
-      header.innerHTML = `<h2 style="text-align: center; color: #f8fafc; margin-bottom: 16px;">现代战舰市场物品价格数据 (${new Date().toLocaleDateString()})</h2>`;
+      header.innerHTML = `
+        <h2 style="text-align: center; color: #f8fafc; margin-bottom: 8px;">现代战舰市场物品价格数据</h2>
+        ${timeRangeDisplay ? `<p style="text-align: center; color: #e2e8f0; margin-bottom: 16px;">${timeRangeDisplay}</p>` : ''}
+      `;
       container.appendChild(header);
       
       // 创建表格
@@ -1170,7 +1210,7 @@ const MarketPriceViewer = () => {
       // 获取图像数据并创建下载链接
       const imageData = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `现代战舰市场数据_${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `${timePrefix}现代战舰市场数据_${new Date().toISOString().split('T')[0]}.png`;
       link.href = imageData;
       link.click();
       
