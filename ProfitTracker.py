@@ -3,6 +3,26 @@ import glob
 import pandas as pd
 from datetime import datetime, timedelta
 import re
+from rich.console import Console
+from rich.theme import Theme
+
+# 修改自定义主题，添加更多样式
+custom_theme = Theme({
+    "positive": "green",
+    "negative": "red",
+    "item": "purple",
+    "title": "bold yellow",
+    "subtitle": "bold cyan",
+    "info": "blue",
+    "category": "magenta",
+    "epic": "bright_magenta",  # 史诗稀有度
+    "rare": "bright_blue",    # 稀有稀有度
+    "uncommon": "bright_green", # 改良稀有度
+    "common": "white",        # 普通稀有度
+    "highlight": "bold cyan",  # 高亮信息
+    "warning": "yellow"        # 警告信息
+})
+console = Console(theme=custom_theme)
 
 def find_latest_price_data():
     """查找最新的价格数据文件"""
@@ -22,12 +42,25 @@ def search_items(keyword, price_df):
 def display_search_results(matches):
     """显示搜索结果并让用户选择"""
     if matches.empty:
-        print("未找到匹配的物品")
+        console.print("\n[warning]未找到匹配的物品[/warning]")
         return None
     
-    print("\n搜索结果:")
+    console.print("\n[subtitle]搜索结果:[/subtitle]")
     for i, (_, row) in enumerate(matches.iterrows()):
-        print(f"{i+1}. {row['物品名称']} - {row['物品分类']} - {row['稀有度']}")
+        rarity = row['稀有度']
+        rarity_style = "common"
+        if "史诗" in rarity:
+            rarity_style = "epic"
+        elif "稀有" in rarity:
+            rarity_style = "rare"
+        elif "改良" in rarity:
+            rarity_style = "uncommon"
+            
+        console.print(
+            f"{i+1}. [item]{row['物品名称']}[/item] - "
+            f"[category]{row['物品分类']}[/category] - "
+            f"[{rarity_style}]{rarity}[/{rarity_style}]"
+        )
     
     while True:
         try:
@@ -35,9 +68,9 @@ def display_search_results(matches):
             if 1 <= choice <= len(matches):
                 return matches.iloc[choice-1]
             else:
-                print(f"请输入1到{len(matches)}之间的数字")
+                console.print(f"[warning]请输入1到{len(matches)}之间的数字[/warning]")
         except ValueError:
-            print("请输入有效的数字")
+            console.print("[warning]请输入有效的数字[/warning]")
 
 def parse_prices(price_str):
     """解析价格字符串中的最低价和最高价"""
@@ -135,7 +168,7 @@ def calculate_profit_summary(profit_df):
 def display_daily_profit(profit_df):
     """显示最近30天的每日盈利情况"""
     if profit_df.empty:
-        print("\n最近30天没有交易记录")
+        console.print("\n[warning]最近30天没有交易记录[/warning]")
         return
     
     # 确保日期列是datetime类型
@@ -148,7 +181,7 @@ def display_daily_profit(profit_df):
     recent_records = profit_df[profit_df['日期'] >= thirty_days_ago]
     
     if recent_records.empty:
-        print("\n最近30天没有交易记录")
+        console.print("\n[warning]最近30天没有交易记录[/warning]")
         return
     
     # 创建盈利和亏损的分类
@@ -169,39 +202,12 @@ def display_daily_profit(profit_df):
     daily_stats['盈利额'] = daily_stats.index.map(lambda date: daily_profit_sum.get(date, 0))
     daily_stats['亏损额'] = daily_stats.index.map(lambda date: daily_loss_sum.get(date, 0))
     
-    # 按日期降序排序（最近的日期在前）
-    daily_stats = daily_stats.sort_index(ascending=False)
+    # 按日期升序排序（最近的日期在后）
+    daily_stats = daily_stats.sort_index(ascending=True)
     
-    print("\n=== 最近30天每日盈利 ===")
+    console.print("\n[title]=== 最近30天每日盈利 ===[/title]")
     
-    # 由于中文字符宽度是英文字符的两倍，调整列宽度
-    date_width = 10  # 日期是英文，保持不变
-    amount_width = 8  # 减小宽度
-    count_width = 7   # 减小宽度
-    profit_width = 7  # 减小宽度
-    loss_width = 7    # 减小宽度
-    
-    # 创建分隔线
-    separator = "+{0}+{1}+{2}+{3}+{4}+".format(
-        "-" * (date_width + 2), 
-        "-" * (amount_width + 2), 
-        "-" * (count_width + 2),
-        "-" * (profit_width + 2),
-        "-" * (loss_width + 2)
-    )
-    
-    # 使用更短的表头文字
-    headers = ["日期", "净赚", "交易数", "盈利", "亏损"]
-    
-    # 打印表头 - 使用居中对齐
-    print(separator)
-    print("| {0:^{5}} | {1:^{6}} | {2:^{7}} | {3:^{8}} | {4:^{9}} |".format(
-        headers[0], headers[1], headers[2], headers[3], headers[4], 
-        date_width, amount_width, count_width, profit_width, loss_width
-    ))
-    print(separator)
-    
-    # 打印每一行数据
+    # 打印每一行数据，使用非表格形式
     for date, row in daily_stats.iterrows():
         date_str = date.strftime('%Y-%m-%d')
         total_amount = row['净赚总额']
@@ -209,12 +215,30 @@ def display_daily_profit(profit_df):
         profit_sum = row['盈利额']
         loss_sum = row['亏损额']
         
-        print("| {0:<{5}} | {1:>{6}.0f} | {2:>{7}} | {3:>{8}.0f} | {4:>{9}.0f} |".format(
-            date_str, total_amount, trade_count, profit_sum, loss_sum,
-            date_width, amount_width, count_width, profit_width, loss_width
-        ))
-    
-    print(separator)
+        # 构建基本字符串
+        base_info = f"{date_str} | "
+        
+        # 净赚部分
+        if total_amount > 0:
+            net_profit_text = f"净赚:{total_amount:.0f}"
+            console.print(base_info, f"[positive]{net_profit_text}[/positive]", f" | 交易数:{trade_count}", end="")
+        elif total_amount < 0:
+            net_loss_text = f"亏损:{abs(total_amount):.0f}"
+            console.print(base_info, f"[negative]{net_loss_text}[/negative]", f" | 交易数:{trade_count}", end="")
+        else:
+            console.print(base_info, f"净赚:0", f" | 交易数:{trade_count}", end="")
+        
+        # 盈利部分
+        if profit_sum > 0:
+            console.print(f" | [positive]盈利:{profit_sum:.0f}[/positive]", end="")
+        else:
+            console.print(f" | 盈利:0", end="")
+            
+        # 亏损部分
+        if loss_sum < 0:
+            console.print(f" | [negative]亏损:{abs(loss_sum):.0f}[/negative]")
+        else:
+            console.print(f" | 亏损:0")
     
     # 计算并显示汇总信息
     total_amount = daily_stats['净赚总额'].sum()
@@ -222,21 +246,98 @@ def display_daily_profit(profit_df):
     total_profit_sum = daily_stats['盈利额'].sum()
     total_loss_sum = daily_stats['亏损额'].sum()
     
-    print(f"总计: 净赚 {total_amount:.0f}, 交易数 {total_trades}, 盈利 {total_profit_sum:.0f}, 亏损 {total_loss_sum:.0f}")
+    console.print("─" * 45)  # 底部分隔线
+    
+    # 显示总计信息
+    if total_amount > 0:
+        console.print(f"总计: [positive]净赚:{total_amount:.0f}[/positive], 交易数:{int(total_trades)}", end="")
+    elif total_amount < 0:
+        console.print(f"总计: [negative]亏损:{abs(total_amount):.0f}[/negative], 交易数:{int(total_trades)}", end="")
+    else:
+        console.print(f"总计: 净赚:0, 交易数:{int(total_trades)}", end="")
+        
+    if total_profit_sum > 0:
+        console.print(f", [positive]盈利:{total_profit_sum:.0f}[/positive]", end="")
+    else:
+        console.print(f", 盈利:0", end="")
+        
+    if total_loss_sum < 0:
+        console.print(f", [negative]亏损:{abs(total_loss_sum):.0f}[/negative]")
+    else:
+        console.print(f", 亏损:0")
 
 def display_profit_summary(profit_df):
     """显示净赚总结"""
-    summary = calculate_profit_summary(profit_df)
-    
-    print("\n=== 净赚总结 ===")
-    print(f"今年净赚: {summary['year']:.0f} ({summary['year_count']}笔交易)")
-    print(f"本月净赚: {summary['month']:.0f} ({summary['month_count']}笔交易)")
-    print(f"本周净赚: {summary['week']:.0f} ({summary['week_count']}笔交易)")
+    # 显示最近100条交易记录
+    display_recent_transactions(profit_df)
     
     # 显示最近30天每日盈利
     display_daily_profit(profit_df)
     
-    input("\n按 Enter 键退出...")
+    summary = calculate_profit_summary(profit_df)
+    
+    console.print("\n[title]=== 净赚总结 ===[/title]")
+    
+    year_profit = summary['year']
+    month_profit = summary['month']
+    week_profit = summary['week']
+    
+    year_style = "positive" if year_profit > 0 else "negative" if year_profit < 0 else "info"
+    month_style = "positive" if month_profit > 0 else "negative" if month_profit < 0 else "info"
+    week_style = "positive" if week_profit > 0 else "negative" if week_profit < 0 else "info"
+    
+    console.print(f"今年净赚: [{year_style}]{year_profit:.0f}[/{year_style}] ({summary['year_count']}笔交易)")
+    console.print(f"本月净赚: [{month_style}]{month_profit:.0f}[/{month_style}] ({summary['month_count']}笔交易)")
+    console.print(f"本周净赚: [{week_style}]{week_profit:.0f}[/{week_style}] ({summary['week_count']}笔交易)")
+    
+    console.print("\n[info]按 Enter 键退出...[/info]", end="")
+    input()
+
+def display_recent_transactions(profit_df):
+    """显示最近100条交易记录"""
+    if profit_df.empty:
+        console.print("\n[warning]没有交易记录[/warning]")
+        return
+    
+    # 确保日期列是datetime类型
+    profit_df['日期'] = pd.to_datetime(profit_df['日期'])
+    
+    # 按日期升序排序并获取前100条记录
+    recent_records = profit_df.sort_values('日期', ascending=True).tail(100)
+    
+    if recent_records.empty:
+        console.print("\n[warning]没有交易记录[/warning]")
+        return
+    
+    console.print("\n[title]=== 最近100条交易记录 ===[/title]")
+    
+    # 打印每条记录
+    for i, (_, row) in enumerate(recent_records.iterrows()):
+        profit_value = row['盈利']
+        
+        # 根据盈利是正还是负，显示"盈利"或"亏损"
+        if profit_value > 0:
+            profit_text = f"盈利:{profit_value:.0f}"
+            profit_style = "positive"
+        elif profit_value < 0:
+            # 对于负值，取绝对值并显示为亏损
+            profit_text = f"亏损:{abs(profit_value):.0f}"
+            profit_style = "negative"
+        else:
+            profit_text = f"盈利:0"
+            profit_style = ""
+            
+        item_name = row['物品名称']
+        
+        # 构建基本信息字符串，但不包含物品名称
+        prefix = f"{i+1}. {row['日期'].strftime('%Y-%m-%d')} "
+        suffix = f" - 买入:{row['购买价格']:.0f} 卖出:{row['出售价格']:.0f} "
+        
+        # 根据盈利正负使用不同颜色打印
+        if profit_style:
+            console.print(prefix, f"[item]{item_name}[/item]", suffix, f"[{profit_style}]{profit_text}[/{profit_style}]")
+        else:
+            console.print(prefix, f"[item]{item_name}[/item]", suffix, profit_text)
 
 def add_profit_record():
     """添加新的盈利记录"""
@@ -245,7 +346,7 @@ def add_profit_record():
     if not latest_price_file:
         return
     
-    print(f"使用价格数据文件: {latest_price_file}")
+    console.print(f"使用价格数据文件: [info]{latest_price_file}[/info]")
     price_df = pd.read_csv(latest_price_file)
     date_str = extract_date_from_filename(latest_price_file)
     
@@ -300,18 +401,39 @@ def add_profit_record():
         }
         
         # 显示要添加的记录
-        print("\n要添加的记录:")
-        for key, value in new_record.items():
-            print(f"{key}: {value}")
+        console.print("\n[subtitle]要添加的记录:[/subtitle]")
+        console.print(f"物品名称: [item]{new_record['物品名称']}[/item]")
+        console.print(f"物品分类: [category]{new_record['物品分类']}[/category]")
+        console.print(f"购买价格: {new_record['购买价格']:.0f}")
+        console.print(f"出售价格: {new_record['出售价格']:.0f}")
+        
+        profit_value = new_record['盈利']
+        profit_style = "positive" if profit_value > 0 else "negative" if profit_value < 0 else "info"
+        profit_sign = "+" if profit_value > 0 else ""
+        console.print(f"盈利: [{profit_style}]{profit_sign}{profit_value:.0f}[/{profit_style}]")
+        
+        console.print(f"日期: {new_record['日期']}")
+        
+        # 根据稀有度选择样式
+        rarity = new_record['稀有度']
+        rarity_style = "common"
+        if "史诗" in rarity:
+            rarity_style = "epic"
+        elif "稀有" in rarity:
+            rarity_style = "rare"
+        elif "改良" in rarity:
+            rarity_style = "uncommon"
+            
+        console.print(f"稀有度: [{rarity_style}]{rarity}[/{rarity_style}]")
         
         confirm = input("\n确认添加? (y/n): ")
         if confirm.lower() == 'y':
             profit_df = pd.concat([profit_df, pd.DataFrame([new_record])], ignore_index=True)
             profit_df.to_csv(profit_file, index=False)
-            print(f"记录已添加到 {profit_file}")
+            console.print(f"[positive]记录已添加到 {profit_file}[/positive]")
         else:
-            print("已取消添加")
+            console.print("[warning]已取消添加[/warning]")
 
 if __name__ == "__main__":
-    print("== 盈利记录工具 ==")
+    console.print("[title]== 盈利记录工具 ==[/title]")
     add_profit_record() 
