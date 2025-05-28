@@ -18,18 +18,17 @@ CATEGORY_DICT = {
 # 物品名称映射（英文文件名 -> 中文名称）
 ITEM_DICT = {
     # 舰艇 warships
-    "chengying": "[中]承影",
-    "tiancheng": "[日]天城",
-    "kechi": "[俄]刻赤(1134BM型)",
+    "shikelang": "[俄]喀琅施塔得",# 舰艇 warships 第一页 NEW
+    "weikelante": "[印]维克兰特(IAC-I)",# NEW
     "SMART_8000": "[西]SMART 8000",
     "shiyan": "[中]十堰",
     "gongqingtuanyuan": "[中]共青团员(1164E型)",
+    "chengying": "[中]承影",
     "KDDX-S": "[韩]KDDX-S",
     "zhousi": "[泛空间]宙斯",
     "zhousidundahe": "[日]宙斯盾大和",
     "tidun": "[泛空间]提顿",
-
-    "dajing": "[日]大鲸(55-513)",
+    "dajing": "[日]大鲸(55-513)",# 舰艇 warships 第二页
     "honglangmu": "[泛空间]红朗姆",
     "PANG": "[法]PANG",
     "mosike": "[俄]莫斯科",
@@ -38,30 +37,29 @@ ITEM_DICT = {
     "liren": "[中]利刃",
     "huaqing": "[中]华清(BBE-01)",
     "BB1011": "[美]新罕布什尔(BB-1011)",
-    "lansha": "[法]蓝鲨",
-
+    "lansha": "[法]蓝鲨",# 舰艇 warships 第三页
     "H41V": "[德]俾斯麦(H-41V)",
     "baimuda": "[泛空间]百慕大",
     "aergenasi": "[泛空间]阿尔戈纳斯",
+    "tiancheng": "[日]天城",
     "yisakefuhaijunshangjiang": "[俄]伊萨科夫海军上将",
     "shipeibojuehaijunshangjiang": "[德]施佩伯爵海军上将",
     "taifeng": "[俄]台风",
     "956E": "[中]杭州(956E型)",
     "26xing": "[英]格拉斯哥(26型)",
     "052DMxing": "[中]达州(052DM型)",
-    "DDG_128": "[美]泰德·史蒂文斯(DDG-128)",
-
+    "DDG_128": "[美]泰德·史蒂文斯(DDG-128)",# 舰艇 warships 第四页
     "DDG_1001": "[美]迈克尔·蒙苏尔(DDG-1001)",
     "CGN_9": "[美]长滩(CGN-9)",
+    "kechi": "[俄]刻赤(1134BM型)",
     "k_329": "[俄]别尔哥罗德(K-329)",
     "f125": "[德]巴登·符腾堡(F125型)",
     "f_110": "[西]博尼法兹(F-110型)",
     "cgn41": "[美]阿肯色(CGN-41)",
     "dd115": "[日]秋月(DD-115)",
     "baxinsidihaijunshangjiang": "[俄]巴辛斯蒂海军上将",
-    "07x": "[中]中船探索01(07X型)",
+    "07x": "[中]中船探索01(07X型)",# 舰艇 warships 第五页
     "076": "[中]四川(076型)",
-
     "058": "[中]058型",
     "055a": "[中]055A型",
     "054b": "[中]漯河(054B型)",
@@ -70,9 +68,8 @@ ITEM_DICT = {
     "smx31": "[法]SMX-31",
     "smx25": "[法]SMX-25",
     "haiyangfuchouzhe": "[法]海洋复仇者",
-    "ffm1": "[日]最上(FFM-1)",
+    "ffm1": "[日]最上(FFM-1)",# 舰艇 warships 第六页
     "jiluofu": "[俄]基洛夫",
-
     "zhengzudawang": "[韩]正祖大王",
     "xiangqu": "[日]香取",
     "chuyun": "[日]出云",
@@ -81,9 +78,8 @@ ITEM_DICT = {
     "83": "[英]83型",
     "zhongnan": "[韩]忠南",
     "f127": "[德]F127型",
-    "f126": "[德]下萨克森(F126型)",
+    "f126": "[德]下萨克森(F126型)",# 舰艇 warships 第七页
     "ddx": "[意]DDX",
-
     "ddr2000": "[美]宪法II(DDR-2000)",
     "ddg203": "[中]麒麟(DDG-203)",
     "ddg179": "[日]摩耶(DDG-179)",
@@ -93,6 +89,7 @@ ITEM_DICT = {
     "geerbushenkefuhaijunshangjiang": "[俄]戈尔什科夫海军上将",
 
     # 轰炸机 bombers
+    "mra4": "猎迷MRA4",# NEW
     "b2a": "B-2A“幽灵”",
     "tu222": "图-222",
     "hong18": "[西飞]轰-18",
@@ -102,8 +99,8 @@ ITEM_DICT = {
     "tu160m": "图-160M“海盗旗”",
     "sr72": "SR-72“暗星”",
     "pakdam": "PAK DA M",
-    "p-8a": "P-BA“波塞冬”",
 
+    "p-8a": "P-BA“波塞冬”",
     "kb-x": "KB-X",
     "zhedao": "[泛空间]折刀",
     "hong6n": "[西飞]轰-6N“雷神”",
@@ -132,8 +129,8 @@ ITEM_DICT = {
     "caihong4": "彩虹-4",
     "tanglang": "[BAE系统]螳螂",
 
-    # 攻击机 attack_aircraft
-    "su27sm3": "苏-27SM3",
+    # 战斗攻击机 attack_aircraft
+    "sh37": "SH-37“雷”",# NEW
     "su57m": "苏-57M",
     "dajishike": "[泛空间]打击时刻",
     "shalushike": "[泛空间]杀戮时刻",
@@ -145,6 +142,7 @@ ITEM_DICT = {
     "zhongjiezhe": "苏-37“终结者”",
 
     "su355": "苏-35S“超级侧卫”",
+    "su27sm3": "苏-27SM3",
     "psf01": "PSF-01“天鹰”",
     "huanying2000_5f": "幻影2000-5F",
     "mige41m": "米格-41M“超级管鼻鸌”",
@@ -153,8 +151,8 @@ ITEM_DICT = {
     "jas39": "JAS-39“鹰狮”",
     "jian35": "歼-35“蓝鲨”",
     "jian25": "歼-25“鬼鸟”",
-    "jian16": "歼-16“潜龙”",
 
+    "jian16": "歼-16“潜龙”",
     "fcas": "FCAS",
     "f7": "F-7",
     "f3": "F-3",
@@ -164,8 +162,8 @@ ITEM_DICT = {
     "f16c": "F-16“战隼”C",
     "f117a": "F-117A“夜鹰”",
     "lingfu": "[泛空间]菱蝠",
-    "jianhongxx": "歼轰-XX",
 
+    "jianhongxx": "歼轰-XX",
     "f90": "F-90",
     "su47": "苏-47“金雕”",
     "su25utgd": "苏-25UTG“蛙足”-D",
@@ -182,7 +180,7 @@ ITEM_DICT = {
     "231gongcheng": "231工程",
 
     # 直升机 helicopters
-    "ch-53e": "CH-53E“超级种马”",
+    "ka29": "卡-29“蜗牛”-B",# NEW
     "ch1": "CH-1“铜斑蛇”",
     "ka50": "卡-50“黑鲨”",
     "shuangjisha": "双髻鲨",
@@ -212,9 +210,10 @@ ITEM_DICT = {
     "uh15a": "UH-15A“超美洲狮”",
     "ec665": "EC-665“虎”",
     "longyi": "[泛空间]龙翼",
+    "ch-53e": "CH-53E“超级种马”",
     "apbusiniao1983": "AP不死鸟1983",
-    "fuheapaqi": "复合阿帕奇",
 
+    "fuheapaqi": "复合阿帕奇",
     "ah1z": "AH-1Z“蝰蛇”",
     "apfengshen2021": "AP风神2021",
     
@@ -246,6 +245,7 @@ ITEM_DICT = {
     "a215m": "A-215“冰雹”M(122 mm)",
 
     # 对空武器 aa_weapons
+    "sipaidemr": "斯派德-MR",# NEW
     "93shi": "93式防空导弹",
     "jrng_6": "JRNG-6近防系统",
     "2030xing": "2030型(30mm)",
