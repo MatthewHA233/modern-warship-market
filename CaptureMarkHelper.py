@@ -17,7 +17,7 @@ save_file_path = "./templates/"
 pos_img_dict = "./templates/modern_warship/ResourceDictionary.py"
 
 # 动作类型 1=截图  2=标点  3=标线（取起终点组成向量） 4=标记区域
-action = 2
+action = 1
 
 # 图片来源替换输入你的did
 ADBHelper.screenCapture("Y57XRWSS8PH6W84L", "home_screen.png")
@@ -257,6 +257,83 @@ drawing = False
 startPos = (0, 0)
 stopPos = (0, 0)
 
+# 添加手动输入坐标截图的函数
+def manual_crop():
+    coords_input = tkinter.simpledialog.askstring(
+        title="手动输入坐标", 
+        prompt="请输入坐标格式：startPoint:(x1,y1) stopPoint:(x2,y2)\n例如：startPoint:(2109,40) stopPoint:(2254,92)",
+        initialvalue="startPoint:(2109,40) stopPoint:(2254,92)"
+    )
+    
+    if coords_input is not None:
+        try:
+            # 解析输入的坐标字符串
+            import re
+            pattern = r'startPoint:\((\d+),(\d+)\)\s*stopPoint:\((\d+),(\d+)\)'
+            match = re.match(pattern, coords_input.replace(' ', ''))
+            
+            if match:
+                x1, y1, x2, y2 = map(int, match.groups())
+                
+                # 确保坐标在图片范围内
+                h_src, w_src = img_source.shape[:2]
+                x1 = max(0, min(x1, w_src))
+                y1 = max(0, min(y1, h_src))
+                x2 = max(0, min(x2, w_src))
+                y2 = max(0, min(y2, h_src))
+                
+                # 确保坐标顺序正确
+                if x1 > x2:
+                    x1, x2 = x2, x1
+                if y1 > y2:
+                    y1, y2 = y2, y1
+                
+                # 截取图片
+                cropped = img_source[y1:y2, x1:x2]
+                
+                if cropped.size > 0:
+                    # 询问变量名
+                    res = tkinter.simpledialog.askstring(
+                        title="输入", 
+                        prompt=f"请输入图片变量名：（坐标：{x1},{y1} 到 {x2},{y2}）",
+                        initialvalue=""
+                    )
+                    
+                    if res is not None:
+                        if isVarExist(res):
+                            tkinter.simpledialog.messagebox.showerror("错误", "该变量名已存在，请更换一个或手动去文件中删除！")
+                        else:
+                            try:
+                                save_path = save_file_path + res + ".png"
+                                save_dir = os.path.dirname(save_path)
+                                if save_dir and not os.path.exists(save_dir):
+                                    os.makedirs(save_dir)
+                                
+                                cv2.imwrite(save_path, cropped)
+                                if os.path.exists(save_path):
+                                    createVar(res, save_path, 1)
+                                    tkinter.simpledialog.messagebox.showinfo("提示", f"手动截图完成！图片已保存至: {save_path}")
+                                else:
+                                    fallback_path = "./" + res + ".png"
+                                    cv2.imwrite(fallback_path, cropped)
+                                    createVar(res, fallback_path, 1)
+                                    tkinter.simpledialog.messagebox.showinfo("提示", f"已保存至当前目录: {fallback_path}")
+                            except Exception as e:
+                                print(f"保存图片时发生错误: {e}")
+                                try:
+                                    fallback_path = "./" + res + ".png"
+                                    cv2.imwrite(fallback_path, cropped)
+                                    createVar(res, fallback_path, 1)
+                                    tkinter.simpledialog.messagebox.showinfo("提示", f"已保存至当前目录: {fallback_path}")
+                                except Exception as e2:
+                                    tkinter.simpledialog.messagebox.showerror("错误", f"保存图片失败: {e2}")
+                else:
+                    tkinter.simpledialog.messagebox.showerror("错误", "截取区域无效，请检查坐标！")
+            else:
+                tkinter.simpledialog.messagebox.showerror("错误", "坐标格式不正确！\n正确格式：startPoint:(x1,y1) stopPoint:(x2,y2)")
+        except Exception as e:
+            tkinter.simpledialog.messagebox.showerror("错误", f"解析坐标时发生错误: {e}")
+
 # 初始化前检查并创建目录
 if not os.path.exists(save_file_path):
     try:
@@ -298,15 +375,26 @@ cv2.namedWindow('image', cv2.WINDOW_NORMAL)
 cv2.resizeWindow("image", w, h)
 if action == 1:
     cv2.setMouseCallback('image', draw_Rect)
+    print("截图模式：鼠标左键拖拽选择区域，右键确认截图，按空格键手动输入坐标截图，ESC键退出")
 elif action == 2:
     cv2.setMouseCallback('image', draw_Point)
+    print("标点模式：鼠标左键点击标记坐标，右键确认保存，ESC键退出")
 elif action == 3:
     cv2.setMouseCallback('image', draw_Line)
+    print("标线模式：鼠标左键拖拽画线，右键确认保存，ESC键退出")
 elif action == 4:
     cv2.setMouseCallback('image', draw_Rect_Pos)
+    print("标记区域模式：鼠标左键拖拽选择区域，右键确认保存，ESC键退出")
 
 cv2.imshow('image', img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
+# 主循环，监听键盘事件
+while True:
+    key = cv2.waitKey(1) & 0xFF
+    if key == 27:  # ESC键退出
+        break
+    elif key == 32 and action == 1:  # 空格键触发手动输入坐标截图（仅在截图模式下）
+        manual_crop()
+
+cv2.destroyAllWindows()
 root.destroy()

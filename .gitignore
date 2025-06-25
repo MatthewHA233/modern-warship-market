@@ -23,6 +23,13 @@ package-lock.json
 /data
 /presets
 
+# AgentScript 相关文件
+AgentScript/cache/
+AgentScript/__pycache__/
+AgentScript/battle_stats/
+AgentScript/*.pyc
+AgentScript/*.pyo
+
 # misc
 .DS_Store
 .env.local

@@ -1,33 +1,20 @@
+#!/usr/bin/env python3
+"""
+现代战舰市场报价追踪工具
+"""
+
+# 静默导入OCR库 - 必须在其他模块之前导入，这是解决cnocr万年难题的关键！
+try:
+    from cnocr import CnOcr
+    CNOCR_AVAILABLE = True
+    print("cnocr导入成功")
+except ImportError as e:
+    CnOcr = None
+    CNOCR_AVAILABLE = False
+    print("cnocr导入失败: %s" % str(e))
+
 import sys
 import os
-
-# 重要：在导入任何其他模块前禁止尝试安装cnocr
-# 方法是修改pip模块的安装函数
-try:
-    import pip
-    if hasattr(pip, 'main'):
-        original_pip_main = pip.main
-        def disabled_pip_main(*args, **kwargs):
-            print("自动安装包已被禁用")
-            return 0
-        pip.main = disabled_pip_main
-except ImportError:
-    pass
-
-# 确保后续代码不会尝试导入cnocr
-# 预先创建一个假的cnocr模块
-class MockCnOcr:
-    def ocr(self, *args, **kwargs):
-        return [["识别失败"]]
-
-class MockCnocr:
-    def __init__(self):
-        self.CnOcr = MockCnOcr
-
-# 将假模块添加到sys.modules
-sys.modules['cnocr'] = MockCnocr()
-
-# 现在导入其他模块
 import glob
 import pandas as pd
 from datetime import datetime
@@ -44,25 +31,8 @@ try:
     import ModernWarshipMarket as mwm
     import MarketPriceRecognizer as mpr
 except ImportError as e:
-    print(f"无法导入必要模块: {e}")
+    print("无法导入必要模块: %s" % str(e))
     sys.exit(1)
-
-# 确保MarketPriceRecognizer不会尝试安装cnocr
-if hasattr(mpr, 'recognize_price'):
-    original_recognize_price = mpr.recognize_price
-    
-    def safe_recognize_price(price_img):
-        """安全版本的recognize_price，防止安装循环"""
-        try:
-            # 尝试调用原始函数，但处理所有异常
-            return original_recognize_price(price_img)
-        except Exception as e:
-            print(f"OCR识别出错: {e}")
-            return "识别失败"
-    
-    # 替换函数
-    mpr.recognize_price = safe_recognize_price
-    print("已修补OCR函数，禁止安装循环")
 
 # 设置设备类型和ID
 rsh.deviceType = 1  # 安卓设备
@@ -237,13 +207,12 @@ def find_and_click_item(item_name, item_category):
 
 # 修改process_price_recognition函数
 def process_price_recognition(screenshot_path, item_name, item_category):
-    """处理价格识别，安全地绕过cnocr可能引起的错误"""
+    """处理价格识别"""
     try:
-        # 直接调用，不预先导入cnocr
+        # 正常调用价格识别
         return mpr.process_screenshot(screenshot_path, item_name, item_category)
     except Exception as e:
-        # 如果出错，记录错误并返回空结果
-        print(f"价格识别出错: {str(e)}")
+        print("价格识别出错: %s" % str(e))
         return [], None, {}
 
 def process_tracked_items():
