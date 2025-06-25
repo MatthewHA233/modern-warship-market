@@ -303,6 +303,7 @@ class AutoBattleWorker(QThread):
         self.total_gold = 0
         self.current_battle_start_time = None  # 当前战斗开始时间
         self.total_battle_time = 0  # 累计战斗时间（分钟）
+        self.cycle_start_time = None  # 单次循环开始时间
         
         # 创建battle_stats目录
         self.stats_dir = os.path.join(SCRIPT_DIR, "battle_stats")
@@ -317,6 +318,7 @@ class AutoBattleWorker(QThread):
         try:
             self.running = True
             self.start_time = datetime.now()
+            self.cycle_start_time = datetime.now()  # 记录单次循环开始时间
             self.load_stats()  # 加载历史统计数据
             
             self.status_changed.emit("运行中")
@@ -481,6 +483,18 @@ class AutoBattleWorker(QThread):
                             self.total_dollar += total_dollar
                             self.total_gold += total_gold
                             
+                            # 计算单次循环时长（在战斗计数器+1时）
+                            if self.cycle_start_time:
+                                cycle_end_time = datetime.now()
+                                cycle_duration = (cycle_end_time - self.cycle_start_time).total_seconds()
+                                cycle_duration_minutes = cycle_duration / 60
+                                self.log_message.emit("单次循环时长: %.1f分钟 (%.0f秒)" % (cycle_duration_minutes, cycle_duration))
+                                # 重置单次循环计时器，为下一次循环做准备
+                                self.cycle_start_time = cycle_end_time
+                            else:
+                                cycle_duration = 0
+                                cycle_duration_minutes = 0
+                            
                             # 计算每小时收益
                             if self.start_time:
                                 elapsed_hours = (datetime.now() - self.start_time).total_seconds() / 3600
@@ -492,19 +506,23 @@ class AutoBattleWorker(QThread):
                                     
                                     self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
                                     self.log_message.emit("每小时收益: 美元%d, 黄金%d, 战斗%.1f场" % (dollar_per_hour, gold_per_hour, battles_per_hour))
-                                    self.log_message.emit("平均战斗时间: %.1f分钟" % avg_battle_time)
+                                    self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
                             
                             # 发送战斗完成信号
                             battle_info = rewards.copy()
                             battle_info['battle_duration_minutes'] = battle_duration_minutes
                             battle_info['battle_duration_seconds'] = battle_duration
+                            battle_info['cycle_duration_minutes'] = cycle_duration_minutes
+                            battle_info['cycle_duration_seconds'] = cycle_duration
                             self.battle_completed.emit(battle_info)
                             
                             # 保存统计数据
                             battle_data = {
                                 'rewards': rewards,
                                 'battle_duration_minutes': battle_duration_minutes,
-                                'battle_duration_seconds': battle_duration
+                                'battle_duration_seconds': battle_duration,
+                                'cycle_duration_minutes': cycle_duration_minutes,
+                                'cycle_duration_seconds': cycle_duration
                             }
                             self.save_stats(battle_data)
                             
@@ -593,6 +611,7 @@ class AutoBattleWorker(QThread):
         """停止工作线程"""
         self.running = False
         self.in_replay = False  # 重置回放状态
+        self.cycle_start_time = None  # 重置单次循环计时器
         if hasattr(self, 'replayer') and self.replayer.is_replaying():
             self.replayer.stop_replay()
         
@@ -658,7 +677,8 @@ class AutoBattleWorker(QThread):
                     writer.writerow([
                         "时间戳", "累计战斗次数", "累计美元", "累计黄金", 
                         "本次美元基础", "本次美元额外", "本次黄金基础", "本次黄金额外", 
-                        "本次总美元", "本次总黄金", "VIP状态", "战斗时间(分钟)", "战斗时间(秒)"
+                        "本次总美元", "本次总黄金", "VIP状态", "战斗时间(分钟)", "战斗时间(秒)",
+                        "单次循环时长(分钟)", "单次循环时长(秒)"
                     ])
                 
                 # 准备本次战斗数据
@@ -673,11 +693,14 @@ class AutoBattleWorker(QThread):
                     vip_status = "有VIP" if rewards.get("has_vip", False) else "无VIP"
                     battle_duration_minutes = battle_data.get('battle_duration_minutes', 0)
                     battle_duration_seconds = battle_data.get('battle_duration_seconds', 0)
+                    cycle_duration_minutes = battle_data.get('cycle_duration_minutes', 0)
+                    cycle_duration_seconds = battle_data.get('cycle_duration_seconds', 0)
                 else:
                     dollar_base = dollar_extra = gold_base = gold_extra = 0
                     total_dollar_this = total_gold_this = 0
                     vip_status = ""
                     battle_duration_minutes = battle_duration_seconds = 0
+                    cycle_duration_minutes = cycle_duration_seconds = 0
                 
                 # 写入数据行
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -685,7 +708,8 @@ class AutoBattleWorker(QThread):
                     timestamp, self.battle_count, self.total_dollar, self.total_gold,
                     dollar_base, dollar_extra, gold_base, gold_extra,
                     total_dollar_this, total_gold_this, vip_status,
-                    "%.2f" % battle_duration_minutes, "%.0f" % battle_duration_seconds
+                    "%.2f" % battle_duration_minutes, "%.0f" % battle_duration_seconds,
+                    "%.2f" % cycle_duration_minutes, "%.0f" % cycle_duration_seconds
                 ])
             
             self.log_message.emit("统计数据已保存到: %s" % self.stats_file)
@@ -705,6 +729,11 @@ class MainWindow(QMainWindow):
         self.init_ui()
         self.refresh_devices()
         self.refresh_replay_files()
+        
+        # 创建定时器用于更新当前循环时间
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.update_current_cycle_time)
+        self.update_timer.start(1000)  # 每秒更新一次
         
     def init_ui(self):
         """初始化界面"""
@@ -834,6 +863,19 @@ class MainWindow(QMainWindow):
         
         earnings_row.addStretch()
         status_layout.addLayout(earnings_row)
+        
+        # 单次循环时长行
+        cycle_row = QHBoxLayout()
+        cycle_row.addWidget(QLabel("上次循环时长:"))
+        self.last_cycle_time_label = QLabel("0分钟")
+        cycle_row.addWidget(self.last_cycle_time_label)
+        
+        cycle_row.addWidget(QLabel("当前循环用时:"))
+        self.current_cycle_time_label = QLabel("0:00")
+        cycle_row.addWidget(self.current_cycle_time_label)
+        
+        cycle_row.addStretch()
+        status_layout.addLayout(cycle_row)
         
         main_layout.addWidget(status_group)
         
@@ -1025,6 +1067,9 @@ class MainWindow(QMainWindow):
             self.start_btn.setEnabled(True)
             self.stop_btn.setEnabled(False)
             
+            # 重置循环时间显示
+            self.current_cycle_time_label.setText("0:00")
+            
             self.log_message("自动战斗已停止")
             
         except Exception as e:
@@ -1056,8 +1101,13 @@ class MainWindow(QMainWindow):
         total_dollar = battle_info["dollar_base"] + battle_info["dollar_extra"]
         total_gold = battle_info["gold_base"] + battle_info["gold_extra"]
         battle_time_minutes = battle_info.get('battle_duration_minutes', 0)
+        cycle_time_minutes = battle_info.get('cycle_duration_minutes', 0)
         
-        self.log_message("战斗完成 - 美元: %d, 黄金: %d, 战斗时间: %.1f分钟" % (total_dollar, total_gold, battle_time_minutes))
+        self.log_message("战斗完成 - 美元: %d, 黄金: %d, 战斗时间: %.1f分钟, 循环时长: %.1f分钟" % (
+            total_dollar, total_gold, battle_time_minutes, cycle_time_minutes))
+        
+        # 更新上次循环时长显示
+        self.last_cycle_time_label.setText("%.1f分钟" % cycle_time_minutes)
     
     def on_stats_updated(self, stats):
         """统计数据更新处理"""
@@ -1081,6 +1131,15 @@ class MainWindow(QMainWindow):
             self.avg_battle_time_label.setText("%.1f分钟" % avg_time)
         else:
             self.avg_battle_time_label.setText("0分钟")
+        
+        # 更新当前循环用时
+        if hasattr(self.worker, 'cycle_start_time') and self.worker and self.worker.cycle_start_time:
+            current_cycle_duration_seconds = (datetime.now() - self.worker.cycle_start_time).total_seconds()
+            minutes = int(current_cycle_duration_seconds // 60)
+            seconds = int(current_cycle_duration_seconds % 60)
+            self.current_cycle_time_label.setText("%d:%02d" % (minutes, seconds))
+        else:
+            self.current_cycle_time_label.setText("0:00")
         
         self.log_message("统计更新 - 战斗: %d场, 美元: %s, 黄金: %s" % (stats['battle_count'], "{:,}".format(stats['total_dollar']), "{:,}".format(stats['total_gold'])))
     
@@ -1108,6 +1167,16 @@ class MainWindow(QMainWindow):
         # 保存配置
         self.save_config()
         event.accept()
+
+    def update_current_cycle_time(self):
+        """更新当前循环时间"""
+        if hasattr(self.worker, 'cycle_start_time') and self.worker and self.worker.cycle_start_time:
+            current_cycle_duration_seconds = (datetime.now() - self.worker.cycle_start_time).total_seconds()
+            minutes = int(current_cycle_duration_seconds // 60)
+            seconds = int(current_cycle_duration_seconds % 60)
+            self.current_cycle_time_label.setText("%d:%02d" % (minutes, seconds))
+        else:
+            self.current_cycle_time_label.setText("0:00")
 
 
 def cleanup_cache_on_startup():
