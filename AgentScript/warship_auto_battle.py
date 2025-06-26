@@ -305,6 +305,9 @@ class AutoBattleWorker(QThread):
         self.total_battle_time = 0  # 累计战斗时间（分钟）
         self.cycle_start_time = None  # 单次循环开始时间
         
+        # 连续其它界面计数器
+        self.other_interface_count = 0
+        
         # 创建battle_stats目录
         self.stats_dir = os.path.join(SCRIPT_DIR, "battle_stats")
         os.makedirs(self.stats_dir, exist_ok=True)
@@ -362,6 +365,9 @@ class AutoBattleWorker(QThread):
     
     def handle_main_page(self):
         """处理主页面"""
+        # 重置其它界面计数器
+        self.other_interface_count = 0
+        
         # 二次确认是否真的是主界面
         self.log_message.emit("检测到主界面，正在二次确认...")
         time.sleep(1)  # 等待1秒再次检测
@@ -380,6 +386,9 @@ class AutoBattleWorker(QThread):
     
     def handle_defense_mode(self):
         """处理防守模式"""
+        # 重置其它界面计数器
+        self.other_interface_count = 0
+        
         self.log_message.emit("检测到防守模式，退出战斗")
         # 使用安卓返回键
         self.send_back_key()
@@ -394,6 +403,9 @@ class AutoBattleWorker(QThread):
     
     def handle_attack_mode(self):
         """处理进攻模式"""
+        # 重置其它界面计数器
+        self.other_interface_count = 0
+        
         self.log_message.emit("检测到进攻模式，开始自动战斗回放")
         
         # 记录战斗开始时间
@@ -497,16 +509,21 @@ class AutoBattleWorker(QThread):
                             
                             # 计算每小时收益
                             if self.start_time:
-                                elapsed_hours = (datetime.now() - self.start_time).total_seconds() / 3600
-                                if elapsed_hours > 0:
-                                    dollar_per_hour = int(self.total_dollar / elapsed_hours)
-                                    gold_per_hour = int(self.total_gold / elapsed_hours)
-                                    battles_per_hour = self.battle_count / elapsed_hours
+                                # 使用CSV数据中的单次循环时长之和来计算每小时收益
+                                total_cycle_hours = self.get_total_cycle_time_hours()
+                                if total_cycle_hours > 0:
+                                    dollar_per_hour = int(self.total_dollar / total_cycle_hours)
+                                    gold_per_hour = int(self.total_gold / total_cycle_hours)
+                                    battles_per_hour = self.battle_count / total_cycle_hours
                                     avg_battle_time = self.total_battle_time / self.battle_count if self.battle_count > 0 else 0
                                     
                                     self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
-                                    self.log_message.emit("每小时收益: 美元%d, 黄金%d, 战斗%.1f场" % (dollar_per_hour, gold_per_hour, battles_per_hour))
+                                    self.log_message.emit("每小时收益: 美元%d, 黄金%d, 战斗%.1f场 (基于循环时长%.1f小时)" % (dollar_per_hour, gold_per_hour, battles_per_hour, total_cycle_hours))
                                     self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
+                                else:
+                                    self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
+                                    self.log_message.emit("暂无有效循环时长数据，无法计算每小时收益")
+                                    self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time if self.battle_count > 0 else 0, cycle_duration_minutes))
                             
                             # 发送战斗完成信号
                             battle_info = rewards.copy()
@@ -593,7 +610,43 @@ class AutoBattleWorker(QThread):
     
     def handle_other_interface(self):
         """处理其他界面"""
-        self.log_message.emit("检测到其他界面，发送返回键")
+        self.other_interface_count += 1
+        self.log_message.emit("检测到其他界面 (连续第%d次)" % self.other_interface_count)
+        
+        # 如果连续3次检测到其它界面，检查是否有进入战斗按钮
+        if self.other_interface_count >= 3:
+            self.log_message.emit("连续3次检测到其它界面，检查是否有进入战斗按钮...")
+            
+            # 捕获当前屏幕
+            screen_img = self.matcher.capture_screen()
+            if screen_img is not None:
+                # 检查是否有into_battle.png，相似度阈值0.7
+                match_result = self.matcher.match_template(screen_img, "into_battle.png", threshold=0.7)
+                if match_result:
+                    self.log_message.emit("发现进入战斗按钮，执行强制进入匹配模式")
+                    
+                    # 先点击Point:(1028, 727)
+                    ADBHelper.touch(self.device_id, (1028, 727))
+                    self.log_message.emit("已点击第一个按钮 (1028, 727)")
+                    time.sleep(1)
+                    
+                    # 再点击Point:(1205, 997)
+                    ADBHelper.touch(self.device_id, (1205, 997))
+                    self.log_message.emit("已点击第二个按钮 (1205, 997)，强制进入匹配模式")
+                    
+                    # 重置计数器
+                    self.other_interface_count = 0
+                    time.sleep(3)  # 等待界面切换
+                    return
+                else:
+                    self.log_message.emit("未发现进入战斗按钮，继续发送返回键")
+            else:
+                self.log_message.emit("无法捕获屏幕，继续发送返回键")
+            
+            # 重置计数器（无论是否找到按钮都重置，避免无限循环）
+            self.other_interface_count = 0
+        
+        # 默认处理：发送返回键
         self.send_back_key()
         time.sleep(1)
     
@@ -652,6 +705,32 @@ class AutoBattleWorker(QThread):
         except Exception as e:
             self.log_message.emit("加载历史统计数据失败: %s" % str(e))
             self.reset_stats()
+    
+    def get_total_cycle_time_hours(self):
+        """从CSV文件计算总的循环时间（小时）"""
+        try:
+            if not os.path.exists(self.stats_file):
+                return 0
+            
+            import csv
+            total_cycle_minutes = 0
+            
+            with open(self.stats_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for record in reader:
+                    cycle_time_str = record.get("单次循环时长(分钟)", "0")
+                    try:
+                        cycle_time = float(cycle_time_str) if cycle_time_str else 0
+                        total_cycle_minutes += cycle_time
+                    except ValueError:
+                        pass  # 忽略无效的循环时间数据
+            
+            # 转换为小时
+            return total_cycle_minutes / 60.0
+            
+        except Exception as e:
+            self.log_message.emit("计算总循环时间失败: %s" % str(e))
+            return 0
     
     def reset_stats(self):
         """重置统计数据"""
@@ -1117,13 +1196,21 @@ class MainWindow(QMainWindow):
         self.total_gold_label.setText("{:,}".format(stats['total_gold']))
         
         # 计算每小时收益和平均战斗时间
-        if hasattr(self.worker, 'start_time') and self.worker.start_time:
-            elapsed_hours = (datetime.now() - self.worker.start_time).total_seconds() / 3600
-            if elapsed_hours > 0:
-                dollar_per_hour = int(stats["total_dollar"] / elapsed_hours)
-                gold_per_hour = int(stats["total_gold"] / elapsed_hours)
+        if hasattr(self.worker, 'get_total_cycle_time_hours'):
+            # 使用CSV数据中的单次循环时长之和来计算每小时收益
+            total_cycle_hours = self.worker.get_total_cycle_time_hours()
+            if total_cycle_hours > 0:
+                dollar_per_hour = int(stats["total_dollar"] / total_cycle_hours)
+                gold_per_hour = int(stats["total_gold"] / total_cycle_hours)
                 self.dollar_per_hour_label.setText("{:,}".format(dollar_per_hour))
                 self.gold_per_hour_label.setText("{:,}".format(gold_per_hour))
+            else:
+                self.dollar_per_hour_label.setText("0")
+                self.gold_per_hour_label.setText("0")
+        else:
+            # 如果worker不存在或没有相应方法，显示0
+            self.dollar_per_hour_label.setText("0")
+            self.gold_per_hour_label.setText("0")
         
         # 显示平均战斗时间
         if stats["battle_count"] > 0 and hasattr(self.worker, 'total_battle_time'):
