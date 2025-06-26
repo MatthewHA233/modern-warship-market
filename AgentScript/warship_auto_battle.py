@@ -305,8 +305,8 @@ class AutoBattleWorker(QThread):
         self.total_battle_time = 0  # 累计战斗时间（分钟）
         self.cycle_start_time = None  # 单次循环开始时间
         
-        # 连续其它界面计数器
-        self.other_interface_count = 0
+        # 连续界面计数器
+        self.other_interface_count = 0  # 连续其它界面计数器
         
         # 创建battle_stats目录
         self.stats_dir = os.path.join(SCRIPT_DIR, "battle_stats")
@@ -368,8 +368,10 @@ class AutoBattleWorker(QThread):
         # 重置其它界面计数器
         self.other_interface_count = 0
         
+        self.log_message.emit("检测到主界面")
+        
         # 二次确认是否真的是主界面
-        self.log_message.emit("检测到主界面，正在二次确认...")
+        self.log_message.emit("正在二次确认主界面...")
         time.sleep(1)  # 等待1秒再次检测
         
         # 再次检测游戏状态
@@ -381,8 +383,56 @@ class AutoBattleWorker(QThread):
         self.log_message.emit("二次确认成功，确实是主界面，点击进入匹配模式")
         # 点击Point:(1227, 987)进入匹配模式
         ADBHelper.touch(self.device_id, (1227, 987))
-        self.log_message.emit("已点击匹配按钮，等待12秒...")
-        time.sleep(12)
+        match_wait_time = self.config.get("match_wait_time", 12)
+        self.log_message.emit("已点击匹配按钮，等待%d秒..." % match_wait_time)
+        
+        # 启动匹配检查线程
+        self.start_match_check_thread()
+        
+        time.sleep(match_wait_time)
+    
+    def start_match_check_thread(self):
+        """启动匹配检查线程"""
+        def check_match_success():
+            try:
+                # 等待1秒让界面稳定
+                time.sleep(1)
+                
+                self.log_message.emit("检查匹配是否成功...")
+                
+                # 检查是否还有into_battle.png
+                screen_img = self.matcher.capture_screen()
+                if screen_img is not None:
+                    # 检查是否有into_battle.png，相似度阈值0.7
+                    is_match, location = self.matcher.match_template(screen_img, "into_battle.png", threshold=0.7)
+                    if is_match:
+                        self.log_message.emit("检测到进入战斗按钮仍然存在，匹配失败，执行强制进入战斗")
+                        
+                        # 强制进入战斗：先点击Point:(1028, 727)
+                        ADBHelper.touch(self.device_id, (1028, 727))
+                        self.log_message.emit("已点击第一个按钮 (1028, 727)")
+                        time.sleep(1)
+                        
+                        # 再点击Point:(1205, 997)
+                        ADBHelper.touch(self.device_id, (1205, 997))
+                        self.log_message.emit("已点击第二个按钮 (1205, 997)，强制进入匹配模式")
+                        
+                        # 强制匹配后也要等待相同的时间
+                        match_wait_time = self.config.get("match_wait_time", 12)
+                        self.log_message.emit("强制匹配完成，等待%d秒..." % match_wait_time)
+                        time.sleep(match_wait_time)
+                    else:
+                        self.log_message.emit("未检测到进入战斗按钮，匹配成功")
+                else:
+                    self.log_message.emit("无法捕获屏幕，跳过匹配检查")
+                    
+            except Exception as e:
+                self.log_message.emit("匹配检查线程出错: %s" % str(e))
+        
+        # 在新线程中执行检查
+        import threading
+        check_thread = threading.Thread(target=check_match_success, daemon=True)
+        check_thread.start()
     
     def handle_defense_mode(self):
         """处理防守模式"""
@@ -611,6 +661,7 @@ class AutoBattleWorker(QThread):
     def handle_other_interface(self):
         """处理其他界面"""
         self.other_interface_count += 1
+        
         self.log_message.emit("检测到其他界面 (连续第%d次)" % self.other_interface_count)
         
         # 如果连续3次检测到其它界面，检查是否有进入战斗按钮
@@ -621,8 +672,8 @@ class AutoBattleWorker(QThread):
             screen_img = self.matcher.capture_screen()
             if screen_img is not None:
                 # 检查是否有into_battle.png，相似度阈值0.7
-                match_result = self.matcher.match_template(screen_img, "into_battle.png", threshold=0.7)
-                if match_result:
+                is_match, location = self.matcher.match_template(screen_img, "into_battle.png", threshold=0.7)
+                if is_match:
                     self.log_message.emit("发现进入战斗按钮，执行强制进入匹配模式")
                     
                     # 先点击Point:(1028, 727)
@@ -636,7 +687,11 @@ class AutoBattleWorker(QThread):
                     
                     # 重置计数器
                     self.other_interface_count = 0
-                    time.sleep(3)  # 等待界面切换
+                    
+                    # 强制匹配后等待配置的匹配时间
+                    match_wait_time = self.config.get("match_wait_time", 12)
+                    self.log_message.emit("强制匹配完成，等待%d秒..." % match_wait_time)
+                    time.sleep(match_wait_time)
                     return
                 else:
                     self.log_message.emit("未发现进入战斗按钮，继续发送返回键")
@@ -890,6 +945,18 @@ class MainWindow(QMainWindow):
         file_row3.addStretch()
         file_layout.addLayout(file_row3)
         
+        # 匹配等待时间设置
+        file_row4 = QHBoxLayout()
+        file_row4.addWidget(QLabel("匹配等待时间(s):"))
+        self.match_wait_spin = QSpinBox()
+        self.match_wait_spin.setRange(5, 60)  # 5-60秒
+        self.match_wait_spin.setValue(self.config.get("match_wait_time", 12))
+        file_row4.addWidget(self.match_wait_spin)
+        
+        file_row4.addWidget(QLabel("说明: 点击匹配按钮后的等待时间"))
+        file_row4.addStretch()
+        file_layout.addLayout(file_row4)
+        
         main_layout.addWidget(file_group)
         
         # 状态显示组
@@ -1010,7 +1077,8 @@ class MainWindow(QMainWindow):
             "replay_file": "",
             "long_press_compensation": 150,
             "check_interval": 2,
-            "start_timing_calibration": 0.2
+            "start_timing_calibration": 0.2,
+            "match_wait_time": 12
         }
     
     def save_config(self):
@@ -1021,7 +1089,8 @@ class MainWindow(QMainWindow):
                 "replay_file": self.replay_combo.currentData(),
                 "long_press_compensation": self.compensation_spin.value(),
                 "check_interval": self.interval_spin.value(),
-                "start_timing_calibration": self.start_timing_spin.value() / 1000.0  # 转换为秒
+                "start_timing_calibration": self.start_timing_spin.value() / 1000.0,  # 转换为秒
+                "match_wait_time": self.match_wait_spin.value()
             }
             
             with open(self.config_file, 'w', encoding='utf-8') as f:
@@ -1112,7 +1181,8 @@ class MainWindow(QMainWindow):
             config = {
                 "long_press_compensation": self.compensation_spin.value(),
                 "check_interval": self.interval_spin.value(),
-                "start_timing_calibration": self.start_timing_spin.value() / 1000.0  # 转换为秒
+                "start_timing_calibration": self.start_timing_spin.value() / 1000.0,  # 转换为秒
+                "match_wait_time": self.match_wait_spin.value()
             }
             
             # 创建工作线程

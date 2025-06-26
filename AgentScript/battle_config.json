@@ -3,5 +3,6 @@
   "replay_file": "D:\\my_pro\\GitHub\\modern-warship-market\\AgentScript\\recording\\花尾鸽走位.json",
   "long_press_compensation": 150,
   "check_interval": 2,
-  "start_timing_calibration": 0.1
+  "start_timing_calibration": 0.1,
+  "match_wait_time": 12
 }
