@@ -18,17 +18,18 @@ CATEGORY_DICT = {
 # 物品名称映射（英文文件名 -> 中文名称）
 ITEM_DICT = {
     # 舰艇 warships
-    "shikelang": "[俄]喀琅施塔得",# 舰艇 warships 第一页 NEW
-    "weikelante": "[印]维克兰特(IAC-I)",# NEW
+    "wuzang": "[日]宙斯盾武藏",# 舰艇 warships 第一页 NEW
+    "shengnvzhende": "[法]圣女贞德",# NEW
     "SMART_8000": "[西]SMART 8000",
     "shiyan": "[中]十堰",
     "gongqingtuanyuan": "[中]共青团员(1164E型)",
+    "shikelang": "[俄]喀琅施塔得",
     "chengying": "[中]承影",
     "KDDX-S": "[韩]KDDX-S",
     "zhousi": "[泛空间]宙斯",
     "zhousidundahe": "[日]宙斯盾大和",
-    "tidun": "[泛空间]提顿",
-    "dajing": "[日]大鲸(55-513)",# 舰艇 warships 第二页
+    "tidun": "[泛空间]提顿",# 舰艇 warships 第二页
+    "dajing": "[日]大鲸(55-513)",
     "honglangmu": "[泛空间]红朗姆",
     "PANG": "[法]PANG",
     "mosike": "[俄]莫斯科",
@@ -47,8 +48,8 @@ ITEM_DICT = {
     "taifeng": "[俄]台风",
     "956E": "[中]杭州(956E型)",
     "26xing": "[英]格拉斯哥(26型)",
-    "052DMxing": "[中]达州(052DM型)",
-    "DDG_128": "[美]泰德·史蒂文斯(DDG-128)",# 舰艇 warships 第四页
+    "052DMxing": "[中]达州(052DM型)",# 舰艇 warships 第四页
+    "DDG_128": "[美]泰德·史蒂文斯(DDG-128)",
     "DDG_1001": "[美]迈克尔·蒙苏尔(DDG-1001)",
     "CGN_9": "[美]长滩(CGN-9)",
     "kechi": "[俄]刻赤(1134BM型)",
@@ -57,8 +58,9 @@ ITEM_DICT = {
     "f_110": "[西]博尼法兹(F-110型)",
     "cgn41": "[美]阿肯色(CGN-41)",
     "dd115": "[日]秋月(DD-115)",
-    "baxinsidihaijunshangjiang": "[俄]巴辛斯蒂海军上将",
-    "07x": "[中]中船探索01(07X型)",# 舰艇 warships 第五页
+    "baxinsidihaijunshangjiang": "[俄]巴辛斯蒂海军上将",# 舰艇 warships 第五页
+    "07x": "[中]中船探索01(07X型)",
+    "weikelante": "[印]维克兰特(IAC-I)",
     "076": "[中]四川(076型)",
     "058": "[中]058型",
     "055a": "[中]055A型",
@@ -66,9 +68,9 @@ ITEM_DICT = {
     "tf2000": "[土]TF-2000",
     "jianchuan": "[法]剑船",
     "smx31": "[法]SMX-31",
-    "smx25": "[法]SMX-25",
+    "smx25": "[法]SMX-25",# 舰艇 warships 第六页
     "haiyangfuchouzhe": "[法]海洋复仇者",
-    "ffm1": "[日]最上(FFM-1)",# 舰艇 warships 第六页
+    "ffm1": "[日]最上(FFM-1)",
     "jiluofu": "[俄]基洛夫",
     "zhengzudawang": "[韩]正祖大王",
     "xiangqu": "[日]香取",
@@ -76,9 +78,9 @@ ITEM_DICT = {
     "yixienamei": "[日]伊邪那美",
     "ifcx260": "[印尼]IFCX 260",
     "83": "[英]83型",
-    "zhongnan": "[韩]忠南",
+    "zhongnan": "[韩]忠南",# 舰艇 warships 第七页
     "f127": "[德]F127型",
-    "f126": "[德]下萨克森(F126型)",# 舰艇 warships 第七页
+    "f126": "[德]下萨克森(F126型)",
     "ddx": "[意]DDX",
     "ddr2000": "[美]宪法II(DDR-2000)",
     "ddg203": "[中]麒麟(DDG-203)",
@@ -86,10 +88,9 @@ ITEM_DICT = {
     "deac": "[法]DEAC",
     "ssbn826": "[美]哥伦比亚(SSBN-826)",
     "1199": "[俄]毒树(1199工程)",
-    "geerbushenkefuhaijunshangjiang": "[俄]戈尔什科夫海军上将",
+    "geerbushenkefuhaijunshangjiang": "[俄]戈尔什科夫海军上将",# 舰艇 warships 第八页
 
     # 轰炸机 bombers
-    "mra4": "猎迷MRA4",# NEW
     "b2a": "B-2A“幽灵”",
     "tu222": "图-222",
     "hong18": "[西飞]轰-18",
@@ -99,8 +100,8 @@ ITEM_DICT = {
     "tu160m": "图-160M“海盗旗”",
     "sr72": "SR-72“暗星”",
     "pakdam": "PAK DA M",
-
     "p-8a": "P-BA“波塞冬”",
+
     "kb-x": "KB-X",
     "zhedao": "[泛空间]折刀",
     "hong6n": "[西飞]轰-6N“雷神”",
@@ -108,6 +109,7 @@ ITEM_DICT = {
     "sdb1": "SDB-1",
     "b1b": "B-1B“枪骑兵”",
     "p1": "P-1“复仇者”",
+    "mra4": "猎迷MRA4",
     "hong8": "[西飞]轰-8",
     "b52h": "B-52H“同温层堡垒”",
 
@@ -130,7 +132,7 @@ ITEM_DICT = {
     "tanglang": "[BAE系统]螳螂",
 
     # 战斗攻击机 attack_aircraft
-    "sh37": "SH-37“雷”",# NEW
+    "guiguai": "F-4S“鬼怪”Ⅱ",# NEW
     "su57m": "苏-57M",
     "dajishike": "[泛空间]打击时刻",
     "shalushike": "[泛空间]杀戮时刻",
@@ -142,16 +144,17 @@ ITEM_DICT = {
     "zhongjiezhe": "苏-37“终结者”",
 
     "su355": "苏-35S“超级侧卫”",
-    "su27sm3": "苏-27SM3",
+    "su27sm3": "苏-27SM3“侧卫”-J2",
+    "sh37": "SH-37“雷”",
     "psf01": "PSF-01“天鹰”",
     "huanying2000_5f": "幻影2000-5F",
     "mige41m": "米格-41M“超级管鼻鸌”",
     "mige31bm": "米格-31BM“猎狐犬”-A",
-    "kf21": "KF-21“猎鹰”",
+    "kf21": "[KAI]KF-21“猎鹰”",
     "jas39": "JAS-39“鹰狮”",
     "jian35": "歼-35“蓝鲨”",
-    "jian25": "歼-25“鬼鸟”",
 
+    "jian25": "歼-25“鬼鸟”",
     "jian16": "歼-16“潜龙”",
     "fcas": "FCAS",
     "f7": "F-7",
@@ -161,8 +164,8 @@ ITEM_DICT = {
     "fa18ef": "F/A-18E/F“超级大黄蜂”",
     "f16c": "F-16“战隼”C",
     "f117a": "F-117A“夜鹰”",
-    "lingfu": "[泛空间]菱蝠",
 
+    "lingfu": "[泛空间]菱蝠",
     "jianhongxx": "歼轰-XX",
     "f90": "F-90",
     "su47": "苏-47“金雕”",
@@ -170,6 +173,7 @@ ITEM_DICT = {
     "a10_2": "A-10“雷电”Ⅱ",
 
     # 战斗机 fighters
+    "kuangfeng": "狂风F.Mk.3",# NEW
     "yf23_2": "YF-23“黑寡妇”Ⅱ",
     "p125": "P.125",
     "mige41": "米格-41",
@@ -180,7 +184,7 @@ ITEM_DICT = {
     "231gongcheng": "231工程",
 
     # 直升机 helicopters
-    "ka29": "卡-29“蜗牛”-B",# NEW
+    "yemao": "野猫HMA2",# NEW
     "ch1": "CH-1“铜斑蛇”",
     "ka50": "卡-50“黑鲨”",
     "shuangjisha": "双髻鲨",
@@ -189,7 +193,7 @@ ITEM_DICT = {
     "zhi21": "直-21",
     "zhi20j": "直-20J",
     "zhi19e": "直-19E“鸢”",
-    "v280": "V-280“勇士”",
+    "v280": "MV-75(V-280“勇士”)",
 
     "v247": "V-247“警惕”",
     "t929": "T-929 ATAK 2",
@@ -203,16 +207,17 @@ ITEM_DICT = {
     "hm2": "灰背隼HM2",
 
     "kaxx": "[卡莫夫]卡-xx",
-    "kai_lan": "KAI-LAH",
+    "kai_lan": "[KAI]LAH",
     "ka90": "卡-90“眼镜蛇”",
     "ka52m": "卡-52M",
+    "ka29": "卡-29“蜗牛”-B",
     "jueying8": "绝影-8",
     "uh15a": "UH-15A“超美洲狮”",
     "ec665": "EC-665“虎”",
     "longyi": "[泛空间]龙翼",
     "ch-53e": "CH-53E“超级种马”",
+    
     "apbusiniao1983": "AP不死鸟1983",
-
     "fuheapaqi": "复合阿帕奇",
     "ah1z": "AH-1Z“蝰蛇”",
     "apfengshen2021": "AP风神2021",
@@ -245,18 +250,18 @@ ITEM_DICT = {
     "a215m": "A-215“冰雹”M(122 mm)",
 
     # 对空武器 aa_weapons
-    "sipaidemr": "斯派德-MR",# NEW
     "93shi": "93式防空导弹",
     "jrng_6": "JRNG-6近防系统",
     "2030xing": "2030型(30mm)",
     "thel": "THEL",
+    "sipaidemr": "斯派德-MR",
     "jijingshouliezhe": "寂静狩猎者",
     "rim162d": "RIM-162D",
     "osu35k": "OSU-35K(35 mm)",
     "ouruikang_hel": "[欧瑞康]HEL",
     "wanfajinfangpao": "“万发”近防炮(25 mm)",
-    "ciws_2": "CIWS-Ⅱ(30 mm)",
 
+    "ciws_2": "CIWS-Ⅱ(30 mm)",
     "hpls100": "HPLS 100",
     "helma_p": "HELMA-P",
     "taiyangshenjiguang": "太阳神激光",
@@ -271,9 +276,9 @@ ITEM_DICT = {
     "30shidiancipao": "30式电磁炮(40 mm)",
 
     # 主炮 main_guns
-    "mx1203": "XM1203 NLOS-C(155 mm)",
     "rg32_mk1": "RG-32 Mk1(150 mm)",
     "hpj29": "H/PJ-29(76 mm)",
+    "mx1203": "XM1203 NLOS-C(155 mm)",
     "erlik2050": "Erlik-2050(127 mm)",
     "155_39tmf": "[BAE系统]155/39 TMF(155 mm)",
     "denglizipao": "等离子炮(203 mm)",
@@ -287,6 +292,7 @@ ITEM_DICT = {
     "l46": "[博福斯]L/46(120 mm)",
 
     # 导弹 missiles
+    "idas": "IDAS",# NEW
     "yu8": "鱼-8",
     "s350yongshi": "5-350“勇士”",
     "p750m": "P-750“陨石”-M",
@@ -296,8 +302,8 @@ ITEM_DICT = {
     "hongqi26": "红旗-26",
     "bulamosi2": "布拉莫斯-Ⅱ",
     "atmaca": "ATMACA“雀鹰”",
+    
     "kuailejiqundaodan": "快乐集群导弹",
-
     "gtx690": "GTX-690",
 }
 

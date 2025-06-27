@@ -20,7 +20,7 @@ import numpy as np
 # START_ITEM_INDEX = 0 表示从该分类的第一个物品开始
 # 示例：设置 START_CATEGORY_INDEX = 1, START_ITEM_INDEX = 10 
 # 将从第二个分类的第11个物品开始处理
-START_CATEGORY_INDEX = 7  # 起始分类索引（0=第一个分类）
+START_CATEGORY_INDEX = 0  # 起始分类索引（0=第一个分类）
 START_ITEM_INDEX = 0     # 起始物品索引（0=该分类的第一个物品）
 
 # 预设物品文件路径（默认为None，表示处理所有物品）

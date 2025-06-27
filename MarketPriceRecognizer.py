@@ -16,6 +16,11 @@ BID_COUNT_REGION = (1140, 278, 38, 42)  # 出价数量区域 (x, y, w, h)
 LISTING_COUNT_REGION = (1505, 285, 69, 32)  # 上架数量区域 (x, y, w, h)
 RARITY_REGION = (270, 197, 52, 20)  # 稀有度区域 (x, y, w, h)
 
+# 编辑按钮检测参数（用于识别本人价格）
+EDIT_BUTTON_REGION = (2094, 407, 238, 65)  # 编辑按钮区域 (x, y, w, h)
+EDIT_BUTTON_TEMPLATE = "edit_button.png"  # 编辑按钮模板文件名
+EDIT_BUTTON_THRESHOLD = 0.7  # 编辑按钮匹配阈值
+
 # 标签识别参数
 TEMPLATE_DIR = "./templates/modern_warship/market_tags/"  # 模板目录
 RARITY_TEMPLATE_DIR = "./templates/modern_warship/rarity/"  # 稀有度模板目录
@@ -126,12 +131,13 @@ def recognize_rarity(rarity_img):
     
     return best_rarity, best_score
 
-def recognize_all_price_areas(screenshot_path):
+def recognize_all_price_areas(screenshot_path, detect_own_prices=False):
     """
     从物品详情页截图中识别所有价格区域
     
     参数:
         screenshot_path: 物品详情页截图路径
+        detect_own_prices: 是否检测本人价格（默认False）
         
     返回:
         成功时返回: found_areas, bid_count, listing_count, rarity_text
@@ -145,6 +151,9 @@ def recognize_all_price_areas(screenshot_path):
     
     # 存储所有找到的标签和价格区域
     found_areas = []
+    
+    # 检测是否有编辑按钮（本人价格）
+    has_own_prices = detect_edit_button(img) if detect_own_prices else False
     
     # 识别额外区域
     bid_count_img = img[BID_COUNT_REGION[1]:BID_COUNT_REGION[1]+BID_COUNT_REGION[3], 
@@ -175,6 +184,9 @@ def recognize_all_price_areas(screenshot_path):
     print(f"识别到的出价数量: {bid_count}")
     print(f"识别到的上架数量: {listing_count}")
     print(f"识别到的稀有度: {rarity_text} (匹配度: {rarity_score:.2f})")
+    
+    # 存储所有标签位置，用于找到本人价格
+    all_label_positions = []
     
     # 遍历所有标签模板
     for template_name in LABEL_TEMPLATES:
@@ -255,10 +267,32 @@ def recognize_all_price_areas(screenshot_path):
                 # 添加到结果列表
                 found_areas.append((price_img, price_region, label_type, label_region, confidence))
                 
+                # 如果需要检测本人价格，记录所有标签位置
+                if detect_own_prices:
+                    all_label_positions.append({
+                        'y': match_y,
+                        'label_type': label_type,
+                        'index': len(found_areas) - 1  # 在found_areas中的索引
+                    })
+                
                 print(f"发现标签: {label_type}, 置信度: {confidence:.2f}")
                 print(f"标签位置: ({match_x}, {match_y}), 标签尺寸: {w}x{h}")
                 print(f"价格区域: ({price_x}, {price_y}, {PRICE_WIDTH}, {PRICE_HEIGHT})")
                 print("---")
+    
+    # 如果需要检测本人价格且检测到编辑按钮
+    if detect_own_prices and has_own_prices and all_label_positions:
+        # 找到y坐标最高（最小）的标签位置
+        topmost_label = min(all_label_positions, key=lambda x: x['y'])
+        topmost_index = topmost_label['index']
+        
+        # 修改对应条目的标签类型
+        if topmost_index < len(found_areas):
+            price_img, price_region, original_label_type, label_region, confidence = found_areas[topmost_index]
+            # 修改为本人价格标签
+            own_label_type = f"own_{original_label_type}"  # 例如：own_buying, own_selling
+            found_areas[topmost_index] = (price_img, price_region, own_label_type, label_region, confidence)
+            print(f"识别到本人价格: {own_label_type} (y坐标: {topmost_label['y']})")
     
     # 如果没有找到任何标签，使用固定区域方法
     if not found_areas:
@@ -309,6 +343,8 @@ def create_markup_image(img, found_areas, bid_count=0, listing_count=0, rarity="
     colors = {
         "buying": (0, 255, 0),      # 绿色
         "selling": (0, 0, 255),     # 红色
+        "own_buying": (0, 255, 255),  # 黄色 - 本人求购价
+        "own_selling": (255, 0, 255), # 紫色 - 本人售出价
         "unknown": (255, 255, 0)    # 青色
     }
     
@@ -369,6 +405,14 @@ def create_markup_image(img, found_areas, bid_count=0, listing_count=0, rarity="
     cv2.rectangle(img_with_markup, (x, y), (x + w, y + h), (0, 255, 255), 2)
     cv2.putText(img_with_markup, f"稀有度: {rarity}", (x, y - 5), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+    
+    # 标记编辑按钮区域（如果有本人价格）
+    has_own_price = any('own_' in label_type for _, _, label_type, _, _ in found_areas)
+    if has_own_price:
+        x, y, w, h = EDIT_BUTTON_REGION
+        cv2.rectangle(img_with_markup, (x, y), (x + w, y + h), (128, 0, 128), 2)
+        cv2.putText(img_with_markup, "编辑按钮", (x, y - 5), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 0, 128), 1)
     
     return img_with_markup
 
@@ -482,19 +526,21 @@ def save_price_data(item_name, category_name, price_data, csv_file_path=None):
         with open(csv_file_path, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             
-            # 如果文件不存在，写入表头
-            if not file_exists:
-                writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '低买低卖溢价', '时间戳', '出价数量', '上架数量', '稀有度'])
-            
             # 获取当前时间
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             # 收集所有购买和出售价格
             buying_prices = []
             selling_prices = []
+            own_buying_price = ""
+            own_selling_price = ""
             
             for key, price in price_data.items():
-                if 'buying' in key:
+                if key == '本人购买价格':
+                    own_buying_price = price
+                elif key == '本人售出价格':
+                    own_selling_price = price
+                elif 'buying' in key:
                     try:
                         # 将逗号替换为空字符，然后转换为整数
                         clean_price = price.replace(',', '').replace(' ', '')
@@ -529,18 +575,52 @@ def save_price_data(item_name, category_name, price_data, csv_file_path=None):
             listing_count = price_data.get('listing_count', 0)
             rarity = price_data.get('rarity', '')
             
-            # 写入数据行
-            writer.writerow([
-                item_name, 
-                category_name, 
-                buying_price_str, 
-                selling_price_str,
-                spread,
-                timestamp,
-                bid_count,
-                listing_count,
-                rarity
-            ])
+            # 检查是否是报价追踪文件
+            is_bid_tracker_file = csv_file_path and '报价追踪.csv' in csv_file_path
+            
+            # 根据文件类型决定表头和数据行格式
+            if is_bid_tracker_file:
+                # 报价追踪文件：始终使用包含所有本人价格列的固定格式
+                if not file_exists:
+                    writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '本人购买价格', '本人售出价格', '低买低卖溢价', '时间戳', '出价数量', '上架数量', '稀有度'])
+                
+                # 数据行：所有列都有值，本人价格列如果没有就用空字符串
+                writer.writerow([
+                    item_name, 
+                    category_name, 
+                    buying_price_str, 
+                    selling_price_str,
+                    own_buying_price if own_buying_price else '',  # 本人购买价格，没有则为空
+                    own_selling_price if own_selling_price else '',  # 本人售出价格，没有则为空
+                    spread,
+                    timestamp,
+                    bid_count,
+                    listing_count,
+                    rarity
+                ])
+            elif own_buying_price or own_selling_price:
+                # 普通文件且有本人价格时的动态格式
+                if not file_exists:
+                    if own_buying_price and own_selling_price:
+                        writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '本人购买价格', '本人售出价格', '低买低卖溢价', '时间戳', '出价数量', '上架数量', '稀有度'])
+                    elif own_buying_price:
+                        writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '本人购买价格', '低买低卖溢价', '时间戳', '出价数量', '上架数量', '稀有度'])
+                    elif own_selling_price:
+                        writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '本人售出价格', '低买低卖溢价', '时间戳', '出价数量', '上架数量', '稀有度'])
+                
+                # 数据行
+                if own_buying_price and own_selling_price:
+                    writer.writerow([item_name, category_name, buying_price_str, selling_price_str, own_buying_price, own_selling_price, spread, timestamp, bid_count, listing_count, rarity])
+                elif own_buying_price:
+                    writer.writerow([item_name, category_name, buying_price_str, selling_price_str, own_buying_price, spread, timestamp, bid_count, listing_count, rarity])
+                elif own_selling_price:
+                    writer.writerow([item_name, category_name, buying_price_str, selling_price_str, own_selling_price, spread, timestamp, bid_count, listing_count, rarity])
+            else:
+                # 普通文件且没有本人价格时的标准格式
+                if not file_exists:
+                    writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '低买低卖溢价', '时间戳', '出价数量', '上架数量', '稀有度'])
+                
+                writer.writerow([item_name, category_name, buying_price_str, selling_price_str, spread, timestamp, bid_count, listing_count, rarity])
         
         print(f"价格数据已保存到: {csv_file_path}")
         return True
@@ -587,7 +667,7 @@ def get_rarity_from_history(item_name, category_name):
         print(f"查找历史稀有度时出错: {str(e)}")
         return "未知"
 
-def process_screenshot(screenshot_path, item_name="未知物品", category_name="未知分类"):
+def process_screenshot(screenshot_path, item_name="未知物品", category_name="未知分类", detect_own_prices=False):
     """
     处理一张物品详情页截图，提取并保存所有价格区域
     
@@ -595,6 +675,7 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
         screenshot_path: 物品详情页截图路径
         item_name: 物品名称
         category_name: 物品分类
+        detect_own_prices: 是否检测本人价格（默认False）
         
     返回:
         价格区域图像路径列表, 带标记的原图路径, 价格数据字典
@@ -608,7 +689,7 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
         return [], None, {}
     
     # 识别所有价格区域和额外信息
-    result = recognize_all_price_areas(screenshot_path)
+    result = recognize_all_price_areas(screenshot_path, detect_own_prices)
     
     if not result or len(result) < 3:
         print("未找到任何价格区域")
@@ -651,14 +732,28 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
         price_img_paths.append(price_img_path)
         
         # 识别价格
-        if label_type in ['buying', 'selling']:
+        if label_type in ['buying', 'selling', 'own_buying', 'own_selling']:
             price = recognize_price(price_img)
             
-            # 如果该类型已有识别结果，则使用索引区分
-            if label_type in price_data:
-                price_data[f"{label_type}_{label_counts[label_type]}"] = price
+            # 处理本人价格：替换对应的普通价格字段
+            if label_type == 'own_buying':
+                # 本人购买价格替换购买价格
+                price_data['本人购买价格'] = price
+                # 如果之前有普通购买价格，移除它
+                if 'buying' in price_data:
+                    del price_data['buying']
+            elif label_type == 'own_selling':
+                # 本人售出价格替换售出价格
+                price_data['本人售出价格'] = price
+                # 如果之前有普通售出价格，移除它
+                if 'selling' in price_data:
+                    del price_data['selling']
             else:
-                price_data[label_type] = price
+                # 普通价格处理
+                if label_type in price_data:
+                    price_data[f"{label_type}_{label_counts[label_type]}"] = price
+                else:
+                    price_data[label_type] = price
     
     # 计算并显示低买低卖溢价
     spread = "N/A"
@@ -692,7 +787,7 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
         except Exception as e:
             print(f"计算低买低卖溢价时出错: {str(e)}")
     
-    # 保存价格数据到CSV
+    # 保存价格数据到CSV（恢复自动保存功能）
     if price_data:
         save_price_data(item_name, category_name, price_data)
     
@@ -814,6 +909,53 @@ def format_price_with_commas(price):
     # 逆序连接并返回
     return ','.join(reversed(parts))
 
+def detect_edit_button(img):
+    """
+    检测页面中是否存在编辑按钮，用于判断是否有本人的价格条目
+    
+    参数:
+        img: 原始图像
+        
+    返回:
+        True表示检测到编辑按钮（有本人价格），False表示没有
+    """
+    try:
+        # 提取编辑按钮区域
+        x, y, w, h = EDIT_BUTTON_REGION
+        edit_region = img[y:y+h, x:x+w]
+        
+        # 构建编辑按钮模板路径
+        template_path = os.path.join(TEMPLATE_DIR, EDIT_BUTTON_TEMPLATE)
+        
+        # 检查模板文件是否存在
+        if not os.path.exists(template_path):
+            print(f"警告: 编辑按钮模板不存在: {template_path}")
+            return False
+        
+        # 读取编辑按钮模板
+        template = cv2.imread(template_path)
+        if template is None:
+            print(f"无法读取编辑按钮模板: {template_path}")
+            return False
+        
+        # 调整模板大小匹配编辑按钮区域
+        template = cv2.resize(template, (w, h))
+        
+        # 进行模板匹配
+        result = cv2.matchTemplate(edit_region, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, _ = cv2.minMaxLoc(result)
+        
+        print(f"编辑按钮匹配度: {max_val:.2f}")
+        
+        # 判断是否检测到编辑按钮
+        is_detected = max_val > EDIT_BUTTON_THRESHOLD
+        print(f"检测到编辑按钮: {is_detected}")
+        
+        return is_detected
+    except Exception as e:
+        print(f"检测编辑按钮时出错: {str(e)}")
+        return False
+
 def main():
     """
     主函数，作为独立脚本运行时调用
@@ -831,6 +973,7 @@ def main():
         # 检查是否提供了物品信息参数
         item_name = default_item_name
         category_name = default_category_name
+        detect_own_prices = False  # 默认不检测本人价格
         
         # 解析物品信息参数
         for i, arg in enumerate(sys.argv):
@@ -838,6 +981,9 @@ def main():
                 item_name = sys.argv[i+1]
             elif arg == "--category" and i+1 < len(sys.argv):
                 category_name = sys.argv[i+1]
+            elif arg == "--detect-own-prices":
+                detect_own_prices = True
+                print("启用本人价格检测功能")
         
         # 检查是否是特殊命令
         if sys.argv[1].lower() == "device":
@@ -852,7 +998,7 @@ def main():
             if screenshot_path:
                 print(f"处理设备截图: {screenshot_path}")
                 print(f"物品信息: {item_name} ({category_name})")
-                price_img_paths, markup_img_path, price_data = process_screenshot(screenshot_path, item_name, category_name)
+                price_img_paths, markup_img_path, price_data = process_screenshot(screenshot_path, item_name, category_name, detect_own_prices)
                 if price_img_paths:
                     print(f"成功提取 {len(price_img_paths)} 个价格区域:")
                     for path in price_img_paths:
@@ -863,7 +1009,19 @@ def main():
                     # 显示价格数据
                     print("\n价格信息:")
                     for label, price in price_data.items():
-                        label_display = "购买价格" if "buying" in label else "出售价格" if "selling" in label else label
+                        if label in ['bid_count', 'listing_count', 'rarity']:
+                            continue
+                        # 显示友好的标签名称
+                        if label == "buying":
+                            label_display = "购买价格"
+                        elif label == "selling":
+                            label_display = "出售价格"
+                        elif label == "own_buying":
+                            label_display = "本人求购价"
+                        elif label == "own_selling":
+                            label_display = "本人售出价"
+                        else:
+                            label_display = label
                         print(f"  {label_display}: {price}")
                 else:
                     print("未能提取任何价格区域")
@@ -877,7 +1035,7 @@ def main():
             # 处理单个文件
             print(f"处理单个截图: {path}")
             print(f"物品信息: {item_name} ({category_name})")
-            price_img_paths, markup_img_path, price_data = process_screenshot(path, item_name, category_name)
+            price_img_paths, markup_img_path, price_data = process_screenshot(path, item_name, category_name, detect_own_prices)
             if price_img_paths:
                 print(f"成功提取 {len(price_img_paths)} 个价格区域:")
                 for path in price_img_paths:
@@ -888,7 +1046,19 @@ def main():
                 # 显示价格数据
                 print("\n价格信息:")
                 for label, price in price_data.items():
-                    label_display = "购买价格" if "buying" in label else "出售价格" if "selling" in label else label
+                    if label in ['bid_count', 'listing_count', 'rarity']:
+                        continue
+                    # 显示友好的标签名称
+                    if label == "buying":
+                        label_display = "购买价格"
+                    elif label == "selling":
+                        label_display = "出售价格"
+                    elif label == "own_buying":
+                        label_display = "本人求购价"
+                    elif label == "own_selling":
+                        label_display = "本人售出价"
+                    else:
+                        label_display = label
                     print(f"  {label_display}: {price}")
             else:
                 print("未能提取任何价格区域")
@@ -906,7 +1076,7 @@ def main():
         screenshot_path = capture_from_device()
         
         if screenshot_path:
-            price_img_paths, markup_img_path, price_data = process_screenshot(screenshot_path, default_item_name, default_category_name)
+            price_img_paths, markup_img_path, price_data = process_screenshot(screenshot_path, default_item_name, default_category_name, False)
             if price_img_paths:
                 print(f"成功提取 {len(price_img_paths)} 个价格区域:")
                 for path in price_img_paths:
@@ -917,6 +1087,8 @@ def main():
                 # 显示价格数据
                 print("\n价格信息:")
                 for label, price in price_data.items():
+                    if label in ['bid_count', 'listing_count', 'rarity']:
+                        continue
                     label_display = "购买价格" if "buying" in label else "出售价格" if "selling" in label else label
                     print(f"  {label_display}: {price}")
             else:

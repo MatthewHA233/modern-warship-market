@@ -43,16 +43,21 @@ BID_TRACKER_FILE = "./market_data/报价追踪.csv"
 TEMPLATE_DIR = mwm.TEMPLATE_DIR
 DEFAULT_DELAY = mwm.DEFAULT_DELAY
 SCREENSHOT_DELAY = mwm.SCREENSHOT_DELAY
+SCREENSHOT_DIR = "./cache/market_screenshots/"  # 截图保存目录
 
 # 特定坐标点
-MARKET_ENTRY_POINT = (222, 453)  # 进入报价界面的坐标
-BUY_ICON_POINT = (375, 147)      # 购买图标的坐标
+MARKET_ENTRY_POINT = ((203, 362))  # 进入报价界面的坐标
+BUY_ICON_POINT = (330, 143)      # 购买图标的坐标
 
 # 价格识别相关设置
 MAX_RECOGNITION_WORKERS = 4  # 最大同时运行的价格识别线程数
 
 # 创建线程池
 price_executor = None
+
+# 确保截图目录存在
+if not os.path.exists(SCREENSHOT_DIR):
+    os.makedirs(SCREENSHOT_DIR)
 
 def find_latest_price_data():
     """查找最新的价格数据文件"""
@@ -93,10 +98,10 @@ def load_tracked_items():
     if os.path.exists(BID_TRACKER_FILE):
         return pd.read_csv(BID_TRACKER_FILE)
     else:
-        # 创建一个新的DataFrame，与price_data相同的列结构
+        # 创建一个新的DataFrame，包含所有可能的本人价格列
         return pd.DataFrame(columns=[
-            "物品名称", "物品分类", "购买价格", "出售价格", "低买低卖溢价", 
-            "时间戳", "出价数量", "上架数量", "稀有度"
+            "物品名称", "物品分类", "购买价格", "出售价格", "本人购买价格", "本人售出价格", 
+            "低买低卖溢价", "时间戳", "出价数量", "上架数量", "稀有度"
         ])
 
 def save_tracked_items(tracked_df):
@@ -113,12 +118,14 @@ def add_item_to_tracker(item):
         print(f"物品 '{item['物品名称']}' 已在追踪列表中")
         return tracked_df
     
-    # 添加新物品
+    # 直接从市场数据复制数据行，添加本人价格列并初始化为空值
     new_item = {
         "物品名称": item['物品名称'],
         "物品分类": item['物品分类'],
         "购买价格": item.get('购买价格', ''),
         "出售价格": item.get('出售价格', ''),
+        "本人购买价格": '',  # 初始化为空值
+        "本人售出价格": '',  # 初始化为空值
         "低买低卖溢价": item.get('低买低卖溢价', ''),
         "时间戳": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "出价数量": item.get('出价数量', ''),
@@ -138,6 +145,10 @@ def open_bid_interface():
     if not mwm.open_market():
         print("无法打开市场界面，请检查游戏状态")
         return False
+    
+    # 等待市场界面完全加载
+    print("等待市场界面完全加载...")
+    time.sleep(1.0)  # 增加1秒等待时间，确保市场界面完全加载
     
     # 点击进入报价界面
     print(f"点击报价入口坐标: {MARKET_ENTRY_POINT}")
@@ -205,12 +216,56 @@ def find_and_click_item(item_name, item_category):
         print(f"跳过物品 '{item_name}'，继续处理下一个")
         return False
 
+def take_stable_screenshot(filename_prefix):
+    """
+    获取稳定的屏幕截图（确保没有loading图标）
+    
+    参数:
+        filename_prefix: 文件名前缀
+    
+    返回:
+        稳定截图的路径或None
+    """
+    try:
+        max_attempts = 5  # 最大尝试次数
+        attempt = 0
+        
+        while attempt < max_attempts:
+            attempt += 1
+            print(f"尝试截图 #{attempt}/{max_attempts}...")
+
+            # 获取截图
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            screenshot_path = f"{SCREENSHOT_DIR}{filename_prefix}_{timestamp}.png"
+            rsh.ADBHelper.screenCapture(rsh.deviceID, screenshot_path)
+            
+            # 检查是否有loading图标（简化版检查）
+            if os.path.exists(screenshot_path):
+                print(f"获取到截图: {screenshot_path}")
+                return screenshot_path
+            
+            print(f"截图失败，将重试...")
+            # 额外等待一段时间再尝试
+            time.sleep(0.05)
+        
+        print(f"达到最大尝试次数({max_attempts})，截图可能失败")
+        return screenshot_path if 'screenshot_path' in locals() else None
+    except Exception as e:
+        print(f"获取稳定截图失败: {str(e)}")
+        return None
+
 # 修改process_price_recognition函数
-def process_price_recognition(screenshot_path, item_name, item_category):
+def process_price_recognition(screenshot_path, item_name, item_category, detect_own_prices=False):
     """处理价格识别"""
     try:
-        # 正常调用价格识别
-        return mpr.process_screenshot(screenshot_path, item_name, item_category)
+        # 调用价格识别，根据参数决定是否启用本人价格检测
+        price_img_paths, markup_img_path, price_data = mpr.process_screenshot(screenshot_path, item_name, item_category, detect_own_prices)
+        
+        # 如果是BidTracker调用且检测到数据，额外保存到报价追踪文件
+        if detect_own_prices and price_data:
+            mpr.save_price_data(item_name, item_category, price_data, BID_TRACKER_FILE)
+        
+        return price_img_paths, markup_img_path, price_data
     except Exception as e:
         print("价格识别出错: %s" % str(e))
         return [], None, {}
@@ -246,6 +301,34 @@ def process_tracked_items():
             print("等待界面加载...")
             time.sleep(2.0)  # 等待2秒确保界面完全加载
             
+            # 额外等待界面完全稳定
+            print(f"等待界面完全稳定 {SCREENSHOT_DELAY} 秒...")
+            time.sleep(SCREENSHOT_DELAY)
+            
+            # 获取物品的英文键名用于截图命名
+            item_key = get_item_key_from_name(item_name)
+            if not item_key:
+                item_key = "unknown_item"  # 如果找不到键名，使用默认名称
+            
+            # 使用take_stable_screenshot获取截图，学习ModernWarshipMarket.py的命名方式
+            screenshot_path = take_stable_screenshot(f"bid_item_detail_{item_key}")
+            
+            if screenshot_path:
+                print(f"已保存物品详情页截图: {screenshot_path}")
+                
+                # 启动价格识别，启用本人价格检测
+                if price_executor is not None:
+                    print(f"提交价格识别任务: {item_name}")
+                    price_executor.submit(
+                        process_price_recognition, 
+                        screenshot_path, 
+                        item_name, 
+                        item_category,
+                        True  # 启用本人价格检测
+                    )
+            else:
+                print("无法获取物品详情页截图")
+            
             # 执行第一次返回
             print("执行第一次返回操作")
             mwm.go_back()
@@ -260,9 +343,11 @@ def process_tracked_items():
         else:
             print(f"无法找到并点击物品 '{item_name}'")
     
-    # 关闭线程池
+    # 等待所有价格识别任务完成
     if price_executor:
+        print("等待所有价格识别任务完成...")
         price_executor.shutdown(wait=True)
+        print("所有价格识别任务已完成")
 
 def add_items_menu():
     """添加物品到追踪列表的菜单"""
