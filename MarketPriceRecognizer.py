@@ -667,7 +667,7 @@ def get_rarity_from_history(item_name, category_name):
         print(f"查找历史稀有度时出错: {str(e)}")
         return "未知"
 
-def process_screenshot(screenshot_path, item_name="未知物品", category_name="未知分类", detect_own_prices=False):
+def process_screenshot(screenshot_path, item_name="未知物品", category_name="未知分类", detect_own_prices=False, auto_save=True):
     """
     处理一张物品详情页截图，提取并保存所有价格区域
     
@@ -676,6 +676,7 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
         item_name: 物品名称
         category_name: 物品分类
         detect_own_prices: 是否检测本人价格（默认False）
+        auto_save: 是否自动保存数据到CSV（默认True）
         
     返回:
         价格区域图像路径列表, 带标记的原图路径, 价格数据字典
@@ -755,40 +756,41 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
                 else:
                     price_data[label_type] = price
     
-    # 计算并显示低买低卖溢价
-    spread = "N/A"
-    buying_prices = []
-    selling_prices = []
-    
-    for key, price in price_data.items():
-        if 'buying' in key:
+    # 计算并显示低买低卖溢价（仅在auto_save=True时计算，避免与BidTracker的自定义计算冲突）
+    if auto_save:
+        spread = "N/A"
+        buying_prices = []
+        selling_prices = []
+        
+        for key, price in price_data.items():
+            if 'buying' in key:
+                try:
+                    clean_price = price.replace(',', '').replace(' ', '')
+                    buying_prices.append(float(clean_price))
+                except:
+                    pass
+            elif 'selling' in key:
+                try:
+                    clean_price = price.replace(',', '').replace(' ', '')
+                    selling_prices.append(float(clean_price))
+                except:
+                    pass
+        
+        if buying_prices and selling_prices:
             try:
-                clean_price = price.replace(',', '').replace(' ', '')
-                buying_prices.append(float(clean_price))
-            except:
-                pass
-        elif 'selling' in key:
-            try:
-                clean_price = price.replace(',', '').replace(' ', '')
-                selling_prices.append(float(clean_price))
-            except:
-                pass
+                max_buying = max(buying_prices)
+                min_selling = min(selling_prices)
+                # 修改计算方式：(最低出售价格*0.8-1) - (最高购买价格+1)
+                spread = int((min_selling * 0.8 - 1) - (max_buying + 1))  # 转换为整数
+                print(f"最高购买价格: {format_price_with_commas(max_buying)}")
+                print(f"最低出售价格: {format_price_with_commas(min_selling)}")
+                print(f"最低出售价格(打八折): {format_price_with_commas(int(min_selling * 0.8))}")
+                print(f"低买低卖溢价: {format_price_with_commas(spread)}")
+            except Exception as e:
+                print(f"计算低买低卖溢价时出错: {str(e)}")
     
-    if buying_prices and selling_prices:
-        try:
-            max_buying = max(buying_prices)
-            min_selling = min(selling_prices)
-            # 修改计算方式：(最低出售价格*0.8-1) - (最高购买价格+1)
-            spread = int((min_selling * 0.8 - 1) - (max_buying + 1))  # 转换为整数
-            print(f"最高购买价格: {format_price_with_commas(max_buying)}")
-            print(f"最低出售价格: {format_price_with_commas(min_selling)}")
-            print(f"最低出售价格(打八折): {format_price_with_commas(int(min_selling * 0.8))}")
-            print(f"低买低卖溢价: {format_price_with_commas(spread)}")
-        except Exception as e:
-            print(f"计算低买低卖溢价时出错: {str(e)}")
-    
-    # 保存价格数据到CSV（恢复自动保存功能）
-    if price_data:
+    # 保存价格数据到CSV（仅在auto_save=True时保存）
+    if auto_save and price_data:
         save_price_data(item_name, category_name, price_data)
     
     return price_img_paths, markup_img_path, price_data

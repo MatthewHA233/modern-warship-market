@@ -24,6 +24,8 @@ import RaphaelScriptHelper as rsh
 import argparse
 import concurrent.futures
 from templates.modern_warship.category_mapping import CATEGORY_DICT, ITEM_DICT, get_category_name, get_item_name
+import json
+import csv
 
 # 导入ModernWarshipMarket
 sys.path.append("./")
@@ -40,6 +42,7 @@ rsh.deviceID = ""   # 请在此填写您的设备ID，可通过adb devices命令
 
 # 报价追踪相关设置
 BID_TRACKER_FILE = "./market_data/报价追踪.csv"
+SHOPPING_LIST_FILE = "./market_data/清单.json"  # 新增：购物清单JSON文件
 TEMPLATE_DIR = mwm.TEMPLATE_DIR
 DEFAULT_DELAY = mwm.DEFAULT_DELAY
 SCREENSHOT_DELAY = mwm.SCREENSHOT_DELAY
@@ -58,6 +61,10 @@ price_executor = None
 # 确保截图目录存在
 if not os.path.exists(SCREENSHOT_DIR):
     os.makedirs(SCREENSHOT_DIR)
+
+# 确保市场数据目录存在
+if not os.path.exists("./market_data"):
+    os.makedirs("./market_data")
 
 def find_latest_price_data():
     """查找最新的价格数据文件"""
@@ -98,10 +105,10 @@ def load_tracked_items():
     if os.path.exists(BID_TRACKER_FILE):
         return pd.read_csv(BID_TRACKER_FILE)
     else:
-        # 创建一个新的DataFrame，包含所有可能的本人价格列
+        # 创建一个新的DataFrame，包含所有可能的本人价格列和利润率列
         return pd.DataFrame(columns=[
             "物品名称", "物品分类", "购买价格", "出售价格", "本人购买价格", "本人售出价格", 
-            "低买低卖溢价", "时间戳", "出价数量", "上架数量", "稀有度"
+            "低买低卖溢价", "利润率", "时间戳", "出价数量", "上架数量", "稀有度"
         ])
 
 def save_tracked_items(tracked_df):
@@ -118,7 +125,37 @@ def add_item_to_tracker(item):
         print(f"物品 '{item['物品名称']}' 已在追踪列表中")
         return tracked_df
     
-    # 直接从市场数据复制数据行，添加本人价格列并初始化为空值
+    # 计算利润率
+    profit_rate = ''
+    try:
+        # 获取购买价格和低买低卖溢价
+        buying_price_str = item.get('购买价格', '')
+        spread_str = item.get('低买低卖溢价', '')
+        
+        if buying_price_str and spread_str and spread_str != 'N/A':
+            # 解析购买价格，找到最高价格
+            buying_prices = []
+            for price in buying_price_str.split(';'):
+                try:
+                    clean_price = price.strip().replace(',', '').replace(' ', '')
+                    if clean_price:
+                        buying_prices.append(float(clean_price))
+                except:
+                    pass
+            
+            if buying_prices:
+                max_buying = max(buying_prices)
+                spread = float(spread_str)
+                
+                # 计算利润率: 溢价 / (最高购买价格 + 1) * 100%
+                profit_rate_value = (spread / (max_buying + 1) * 100) if (max_buying + 1) > 0 else 0
+                profit_rate = f"{profit_rate_value:.2f}%"
+                print(f"计算利润率: {spread} / ({max_buying} + 1) × 100% = {profit_rate}")
+    except Exception as e:
+        print(f"计算利润率时出错: {str(e)}")
+        profit_rate = ''
+    
+    # 直接从市场数据复制数据行，添加本人价格列和利润率列并初始化为空值
     new_item = {
         "物品名称": item['物品名称'],
         "物品分类": item['物品分类'],
@@ -127,7 +164,8 @@ def add_item_to_tracker(item):
         "本人购买价格": '',  # 初始化为空值
         "本人售出价格": '',  # 初始化为空值
         "低买低卖溢价": item.get('低买低卖溢价', ''),
-        "时间戳": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "利润率": profit_rate,  # 计算得出的利润率
+        "时间戳": item.get('时间戳', ''),  # 从市场数据复制时间戳
         "出价数量": item.get('出价数量', ''),
         "上架数量": item.get('上架数量', ''),
         "稀有度": item.get('稀有度', '')
@@ -135,7 +173,11 @@ def add_item_to_tracker(item):
     
     tracked_df = pd.concat([tracked_df, pd.DataFrame([new_item])], ignore_index=True)
     save_tracked_items(tracked_df)
-    print(f"已添加 '{item['物品名称']}' 到追踪列表")
+    print(f"已添加 '{item['物品名称']}' 到追踪列表 (利润率: {profit_rate})")
+    
+    # 同时添加到JSON购物清单
+    add_item_to_shopping_list(item['物品名称'], item['物品分类'])
+    
     return tracked_df
 
 def open_bid_interface():
@@ -258,17 +300,251 @@ def take_stable_screenshot(filename_prefix):
 def process_price_recognition(screenshot_path, item_name, item_category, detect_own_prices=False):
     """处理价格识别"""
     try:
-        # 调用价格识别，根据参数决定是否启用本人价格检测
-        price_img_paths, markup_img_path, price_data = mpr.process_screenshot(screenshot_path, item_name, item_category, detect_own_prices)
+        # 调用价格识别，根据参数决定是否启用本人价格检测，禁用自动保存避免重复保存
+        price_img_paths, markup_img_path, price_data = mpr.process_screenshot(
+            screenshot_path, item_name, item_category, detect_own_prices, auto_save=False
+        )
         
-        # 如果是BidTracker调用且检测到数据，额外保存到报价追踪文件
+        # 如果是BidTracker调用且检测到数据，进行自定义溢价计算
         if detect_own_prices and price_data:
-            mpr.save_price_data(item_name, item_category, price_data, BID_TRACKER_FILE)
+            # 计算自定义的低买低卖溢价和利润率
+            spread, profit_rate = calculate_custom_spread(item_name, item_category, price_data)
+            if spread is not None:
+                price_data['低买低卖溢价'] = spread
+                price_data['利润率'] = profit_rate
+                print(f"使用自定义溢价计算结果: {spread}")
+            
+            # 保存到报价追踪文件
+            save_bid_tracker_data(item_name, item_category, price_data)
         
         return price_img_paths, markup_img_path, price_data
     except Exception as e:
         print("价格识别出错: %s" % str(e))
         return [], None, {}
+
+def calculate_custom_spread(item_name, item_category, price_data):
+    """
+    计算自定义的低买低卖溢价和利润率
+    
+    参数:
+        item_name: 物品名称
+        item_category: 物品分类
+        price_data: 价格数据字典
+        
+    返回:
+        (计算出的溢价值, 利润率百分比)，如果无法计算则返回(None, None)
+    """
+    try:
+        # 获取本人购买价格和本人售出价格
+        own_buying_price = price_data.get('本人购买价格', '')
+        own_selling_price = price_data.get('本人售出价格', '')
+        
+        # 情况1: 存在本人购买价格时
+        if own_buying_price and own_buying_price != '':
+            # 获取所有出售价格
+            selling_prices = []
+            for key, price in price_data.items():
+                if 'selling' in key and key != '本人售出价格':
+                    try:
+                        clean_price = price.replace(',', '').replace(' ', '')
+                        if clean_price:
+                            selling_prices.append(float(clean_price))
+                    except:
+                        pass
+            
+            if selling_prices:
+                try:
+                    min_selling = min(selling_prices)
+                    own_buying = float(own_buying_price.replace(',', '').replace(' ', ''))
+                    # 公式: (最低出售价格 × 0.8 - 1) - 本人购买价格
+                    spread = int((min_selling * 0.8 - 1) - own_buying)
+                    # 利润率 = 溢价 / 本人购买价格 * 100%
+                    profit_rate = (spread / own_buying * 100) if own_buying > 0 else 0
+                    print(f"本人购买价格溢价计算: ({min_selling} × 0.8 - 1) - {own_buying} = {spread}")
+                    print(f"利润率计算: {spread} / {own_buying} × 100% = {profit_rate:.2f}%")
+                    return spread, f"{profit_rate:.2f}%"
+                except Exception as e:
+                    print(f"计算本人购买价格溢价时出错: {str(e)}")
+        
+        # 情况2: 存在本人售出价格时
+        elif own_selling_price and own_selling_price != '':
+            # 从购物清单的正在售出字段获取进货价
+            purchase_price = get_purchase_price_from_selling_list(item_name, item_category)
+            if purchase_price is not None:
+                try:
+                    own_selling = float(own_selling_price.replace(',', '').replace(' ', ''))
+                    # 公式: 本人售出价格 × 0.8 - 进货价
+                    spread = int(own_selling * 0.8 - purchase_price)
+                    # 利润率 = 溢价 / 进货价 * 100%
+                    profit_rate = (spread / purchase_price * 100) if purchase_price > 0 else 0
+                    print(f"本人售出价格溢价计算: {own_selling} × 0.8 - {purchase_price} = {spread}")
+                    print(f"利润率计算: {spread} / {purchase_price} × 100% = {profit_rate:.2f}%")
+                    return spread, f"{profit_rate:.2f}%"
+                except Exception as e:
+                    print(f"计算本人售出价格溢价时出错: {str(e)}")
+            else:
+                print(f"未找到物品 '{item_name}' 的进货价，无法计算售出溢价")
+        
+        # 情况3: 没有本人价格时，使用原有逻辑
+        else:
+            # 获取所有购买和出售价格
+            buying_prices = []
+            selling_prices = []
+            
+            for key, price in price_data.items():
+                if 'buying' in key:
+                    try:
+                        clean_price = price.replace(',', '').replace(' ', '')
+                        if clean_price:
+                            buying_prices.append(float(clean_price))
+                    except:
+                        pass
+                elif 'selling' in key:
+                    try:
+                        clean_price = price.replace(',', '').replace(' ', '')
+                        if clean_price:
+                            selling_prices.append(float(clean_price))
+                    except:
+                        pass
+            
+            if buying_prices and selling_prices:
+                try:
+                    max_buying = max(buying_prices)
+                    min_selling = min(selling_prices)
+                    # 原有公式: (最低出售价格 × 0.8 - 1) - (最高购买价格 + 1)
+                    spread = int((min_selling * 0.8 - 1) - (max_buying + 1))
+                    # 利润率 = 溢价 / (最高购买价格 + 1) * 100%
+                    profit_rate = (spread / (max_buying + 1) * 100) if (max_buying + 1) > 0 else 0
+                    print(f"普通溢价计算: ({min_selling} × 0.8 - 1) - ({max_buying} + 1) = {spread}")
+                    print(f"利润率计算: {spread} / ({max_buying} + 1) × 100% = {profit_rate:.2f}%")
+                    return spread, f"{profit_rate:.2f}%"
+                except Exception as e:
+                    print(f"计算普通溢价时出错: {str(e)}")
+        
+        return None, None
+    except Exception as e:
+        print(f"计算自定义溢价时出错: {str(e)}")
+        return None, None
+
+def get_purchase_price_from_selling_list(item_name, item_category):
+    """
+    从购物清单的正在售出字段获取进货价
+    
+    参数:
+        item_name: 物品名称
+        item_category: 物品分类
+        
+    返回:
+        进货价（数字），如果找不到则返回None
+    """
+    try:
+        shopping_list = load_shopping_list()
+        selling_items = shopping_list.get("正在售出", [])
+        
+        for item in selling_items:
+            if (item.get("物品名称") == item_name and 
+                item.get("物品分类") == item_category):
+                purchase_price = item.get("进货价")
+                if purchase_price is not None:
+                    try:
+                        # 转换为数字
+                        if isinstance(purchase_price, str):
+                            purchase_price = float(purchase_price.replace(',', '').replace(' ', ''))
+                        return float(purchase_price)
+                    except:
+                        print(f"无法解析进货价: {purchase_price}")
+                        return None
+        
+        print(f"在正在售出清单中未找到物品: {item_name}")
+        return None
+    except Exception as e:
+        print(f"获取进货价时出错: {str(e)}")
+        return None
+
+def save_bid_tracker_data(item_name, category_name, price_data):
+    """
+    保存数据到报价追踪文件（自定义格式）
+    
+    参数:
+        item_name: 物品名称
+        category_name: 物品分类
+        price_data: 价格数据字典
+    """
+    try:
+        # 检查CSV文件是否存在，不存在则创建并写入表头
+        file_exists = os.path.exists(BID_TRACKER_FILE)
+        
+        with open(BID_TRACKER_FILE, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            
+            # 写入表头（如果文件不存在）
+            if not file_exists:
+                writer.writerow(['物品名称', '物品分类', '购买价格', '出售价格', '本人购买价格', '本人售出价格', '低买低卖溢价', '利润率', '时间戳', '出价数量', '上架数量', '稀有度'])
+            
+            # 获取当前时间
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 收集所有购买和出售价格
+            buying_prices = []
+            selling_prices = []
+            own_buying_price = ""
+            own_selling_price = ""
+            
+            for key, price in price_data.items():
+                if key == '本人购买价格':
+                    own_buying_price = price
+                elif key == '本人售出价格':
+                    own_selling_price = price
+                elif 'buying' in key:
+                    try:
+                        clean_price = price.replace(',', '').replace(' ', '')
+                        if clean_price:
+                            buying_prices.append(int(clean_price))
+                    except:
+                        print(f"无法解析购买价格: {price}")
+                elif 'selling' in key:
+                    try:
+                        clean_price = price.replace(',', '').replace(' ', '')
+                        if clean_price:
+                            selling_prices.append(int(clean_price))
+                    except:
+                        print(f"无法解析出售价格: {price}")
+            
+            # 格式化价格字符串
+            def format_price_with_commas(price):
+                return f"{price:,}" if isinstance(price, (int, float)) else str(price)
+            
+            buying_price_str = '; '.join(format_price_with_commas(p) for p in buying_prices) if buying_prices else ''
+            selling_price_str = '; '.join(format_price_with_commas(p) for p in selling_prices) if selling_prices else ''
+            
+            # 获取额外信息
+            bid_count = price_data.get('bid_count', 0)
+            listing_count = price_data.get('listing_count', 0)
+            rarity = price_data.get('rarity', '')
+            spread = price_data.get('低买低卖溢价', 'N/A')
+            profit_rate = price_data.get('利润率', '')  # 获取利润率
+            
+            # 写入数据行
+            writer.writerow([
+                item_name, 
+                category_name, 
+                buying_price_str, 
+                selling_price_str,
+                own_buying_price if own_buying_price else '',
+                own_selling_price if own_selling_price else '',
+                spread,
+                profit_rate,  # 添加利润率列
+                timestamp,
+                bid_count,
+                listing_count,
+                rarity
+            ])
+        
+        print(f"价格数据已保存到报价追踪文件: {BID_TRACKER_FILE}")
+        return True
+    except Exception as e:
+        print(f"保存报价追踪数据时出错: {str(e)}")
+        return False
 
 def process_tracked_items():
     """处理追踪列表中的所有物品"""
@@ -277,23 +553,25 @@ def process_tracked_items():
     # 初始化价格识别线程池
     price_executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_RECOGNITION_WORKERS)
     
-    # 加载追踪物品列表
-    tracked_df = load_tracked_items()
-    if tracked_df.empty:
-        print("追踪列表为空，请先添加物品")
+    # 从JSON购物清单加载正在购买的物品
+    shopping_items = get_items_from_shopping_list()
+    if not shopping_items:
+        print("购物清单中没有正在购买的物品，请先添加物品")
         return
+    
+    print(f"从购物清单中加载了 {len(shopping_items)} 个正在购买的物品")
     
     # 打开报价界面
     if not open_bid_interface():
         return
     
-    # 遍历追踪列表中的物品
+    # 遍历购物清单中的物品
     updated_count = 0
-    for idx, item in tracked_df.iterrows():
+    for idx, item in enumerate(shopping_items):
         item_name = item['物品名称']
         item_category = item['物品分类']
         
-        print(f"\n处理物品 [{idx+1}/{len(tracked_df)}]: {item_name} ({item_category})")
+        print(f"\n处理物品 [{idx+1}/{len(shopping_items)}]: {item_name} ({item_category})")
         
         # 查找并点击物品
         if find_and_click_item(item_name, item_category):
@@ -375,6 +653,77 @@ def add_items_menu():
         # 添加物品到追踪列表
         add_item_to_tracker(item)
 
+def load_shopping_list():
+    """加载购物清单JSON文件"""
+    if os.path.exists(SHOPPING_LIST_FILE):
+        try:
+            with open(SHOPPING_LIST_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"加载购物清单文件失败: {str(e)}")
+            return create_default_shopping_list()
+    else:
+        return create_default_shopping_list()
+
+def create_default_shopping_list():
+    """创建默认的购物清单结构"""
+    return {
+        "标的清单": [],
+        "正在购买": [],
+        "取消购买": [],
+        "正在售出": []
+        # 正在售出字段的结构示例：
+        # "正在售出": [
+        #     {
+        #         "物品名称": "物品名称",
+        #         "物品分类": "物品分类",
+        #         "进货价": 12345,  # 数字格式的进货价
+        #         "添加时间": "2025-06-27 13:47:03"
+        #     }
+        # ]
+        # 
+        # 报价追踪CSV文件结构：
+        # 物品名称,物品分类,购买价格,出售价格,本人购买价格,本人售出价格,低买低卖溢价,利润率,时间戳,出价数量,上架数量,稀有度
+    }
+
+def save_shopping_list(shopping_list):
+    """保存购物清单到JSON文件"""
+    try:
+        with open(SHOPPING_LIST_FILE, 'w', encoding='utf-8') as f:
+            json.dump(shopping_list, f, ensure_ascii=False, indent=2)
+        print(f"购物清单已保存到: {SHOPPING_LIST_FILE}")
+        return True
+    except Exception as e:
+        print(f"保存购物清单失败: {str(e)}")
+        return False
+
+def add_item_to_shopping_list(item_name, item_category):
+    """将物品添加到购物清单的正在购买类别"""
+    shopping_list = load_shopping_list()
+    
+    # 检查是否已存在
+    for item in shopping_list["正在购买"]:
+        if item["物品名称"] == item_name and item["物品分类"] == item_category:
+            print(f"物品 '{item_name}' 已在正在购买清单中")
+            return shopping_list
+    
+    # 添加新物品
+    new_item = {
+        "物品名称": item_name,
+        "物品分类": item_category,
+        "添加时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    shopping_list["正在购买"].append(new_item)
+    save_shopping_list(shopping_list)
+    print(f"已将 '{item_name}' 添加到正在购买清单")
+    return shopping_list
+
+def get_items_from_shopping_list():
+    """从购物清单中获取正在购买的物品列表"""
+    shopping_list = load_shopping_list()
+    return shopping_list.get("正在购买", [])
+
 def parse_arguments():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='报价追踪工具')
@@ -437,19 +786,25 @@ def main():
             elif choice == '2':
                 process_tracked_items()
             elif choice == '3':
-                tracked_df = load_tracked_items()
-                if tracked_df.empty:
-                    print("追踪列表为空")
+                # 显示购物清单内容
+                shopping_list = load_shopping_list()
+                shopping_items = shopping_list.get("正在购买", [])
+                
+                if not shopping_items:
+                    print("购物清单中没有正在购买的物品")
                 else:
-                    print("\n当前追踪的物品列表:")
-                    for idx, item in tracked_df.iterrows():
-                        print(f"{idx+1}. {item['物品名称']} - {item['物品分类']} - {item['稀有度']}")
-                        print(f"   购买价格: {item['购买价格']}")
-                        print(f"   出售价格: {item['出售价格']}")
-                        print(f"   低买低卖溢价: {item['低买低卖溢价']}")
-                        print(f"   最后更新: {item['时间戳']}")
-                        print(f"   出价/上架: {item['出价数量']}/{item['上架数量']}")
+                    print(f"\n当前正在购买的物品列表 (共{len(shopping_items)}个):")
+                    for idx, item in enumerate(shopping_items):
+                        print(f"{idx+1}. {item['物品名称']} - {item['物品分类']}")
+                        print(f"   添加时间: {item.get('添加时间', '未知')}")
                         print("---")
+                    
+                    # 同时显示其他类别的统计
+                    print(f"\n购物清单统计:")
+                    print(f"  标的清单: {len(shopping_list.get('标的清单', []))}个物品")
+                    print(f"  正在购买: {len(shopping_list.get('正在购买', []))}个物品")
+                    print(f"  取消购买: {len(shopping_list.get('取消购买', []))}个物品")
+                    print(f"  正在售出: {len(shopping_list.get('正在售出', []))}个物品")
             elif choice == '0':
                 break
             else:
