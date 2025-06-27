@@ -449,15 +449,53 @@ def access_item(item_info, item_number):
             'screenshot': None
         }
 
-def save_results(results):
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='现代战舰市场数据采集')
+    parser.add_argument('--start_category', type=int, default=START_CATEGORY_INDEX, help='起始分类索引')
+    parser.add_argument('--start_item', type=int, default=START_ITEM_INDEX, help='起始物品索引')
+    parser.add_argument('--preset', type=str, default=None, help='预设文件路径')
+    parser.add_argument('--output', type=str, default=None, help='自定义输出CSV文件名（不含扩展名）')
+    parser.add_argument('--price_output', type=str, default=None, help='自定义价格数据CSV文件名（不含扩展名）')
+    return parser.parse_args()
+
+def generate_output_filename(custom_name=None, file_type="access"):
+    """
+    生成输出文件名
+    
+    参数:
+        custom_name: 自定义文件名（不含扩展名）
+        file_type: 文件类型，"access"表示访问日志，"price"表示价格数据
+    
+    返回:
+        完整的文件路径
+    """
+    if custom_name:
+        # 使用自定义文件名
+        if file_type == "access":
+            return f"{OUTPUT_DIR}{custom_name}.csv"
+        elif file_type == "price":
+            return f"./market_data/{custom_name}.csv"
+    else:
+        # 使用默认文件名
+        if file_type == "access":
+            return f"{OUTPUT_DIR}market_access_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        elif file_type == "price":
+            return f"./market_data/price_data_{datetime.now().strftime('%Y%m%d_%H')}.csv"
+    
+    return None
+
+def save_results(results, output_file=None):
     """保存访问记录到CSV文件"""
     try:
         if not results:
             print("没有数据需要保存")
             return
         
-        print(f"正在保存结果到文件：{OUTPUT_FILE}")
-        with open(OUTPUT_FILE, 'w', newline='', encoding='utf-8') as f:
+        # 使用指定的输出文件或默认文件
+        file_path = output_file or OUTPUT_FILE
+        
+        print(f"正在保存结果到文件：{file_path}")
+        with open(file_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['物品分类', '物品名称', '访问结果', '截图路径', '时间戳'])
             for item in results:
@@ -468,7 +506,7 @@ def save_results(results):
                     item['screenshot'] or '无',
                     item['timestamp']
                 ])
-        print(f"结果已保存到文件：{OUTPUT_FILE}")
+        print(f"结果已保存到文件：{file_path}")
     except Exception as e:
         print(f"保存结果时出错: {str(e)}")
 
@@ -536,9 +574,9 @@ def process_item_price(screenshot_path, item_name, category_name, delete_after=T
     try:
         print(f"[价格识别] 开始处理 {item_name} ({category_name})")
         
-        # 修改价格数据文件路径，使用当前小时
-        current_hour_file = f"./market_data/price_data_{datetime.now().strftime('%Y%m%d_%H')}.csv"
-        mpr.PRICE_DATA_FILE = current_hour_file
+        # 使用全局的价格数据文件路径
+        global PRICE_DATA_FILE
+        mpr.PRICE_DATA_FILE = PRICE_DATA_FILE
         
         # 设置不保存临时图像
         if not KEEP_TEMP_IMAGES:
@@ -616,17 +654,10 @@ def load_preset_items():
         print(f"加载预设物品文件时出错: {str(e)}")
         return None
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='现代战舰市场数据采集')
-    parser.add_argument('--start_category', type=int, default=START_CATEGORY_INDEX, help='起始分类索引')
-    parser.add_argument('--start_item', type=int, default=START_ITEM_INDEX, help='起始物品索引')
-    parser.add_argument('--preset', type=str, default=None, help='预设文件路径')
-    return parser.parse_args()
-
 def main():
     """主函数"""
     try:
-        global price_executor
+        global price_executor, OUTPUT_FILE, PRICE_DATA_FILE
         
         # 解析命令行参数
         args = parse_arguments()
@@ -636,6 +667,12 @@ def main():
         START_CATEGORY_INDEX = args.start_category
         START_ITEM_INDEX = args.start_item
         PRESET_FILE = args.preset
+        
+        # 生成输出文件名
+        OUTPUT_FILE = generate_output_filename(args.output, "access")
+        custom_price_file = generate_output_filename(args.price_output, "price")
+        if custom_price_file:
+            PRICE_DATA_FILE = custom_price_file
         
         print("\n" + "="*50)
         print("现代战舰市场物品访问脚本 - 按分类遍历")
@@ -648,6 +685,12 @@ def main():
         print("4. 游戏已运行并位于主界面")
         print("5. 已在脚本开头设置正确的设备ID")
         print("\n游戏和脚本的分辨率必须匹配，否则识别将失败")
+        
+        # 打印文件名信息
+        print(f"\n输出文件设置:")
+        print(f"访问日志文件: {OUTPUT_FILE}")
+        if ENABLE_PRICE_RECOGNITION:
+            print(f"价格数据文件: {PRICE_DATA_FILE}")
         
         # 加载预设物品
         preset_items = load_preset_items()

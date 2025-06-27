@@ -788,10 +788,10 @@ def process_screenshot(screenshot_path, item_name="未知物品", category_name=
                 print(f"低买低卖溢价: {format_price_with_commas(spread)}")
             except Exception as e:
                 print(f"计算低买低卖溢价时出错: {str(e)}")
-    
-    # 保存价格数据到CSV（仅在auto_save=True时保存）
-    if auto_save and price_data:
-        save_price_data(item_name, category_name, price_data)
+        
+        # 保存价格数据到CSV（仅在auto_save=True时保存）
+        if price_data:
+            save_price_data(item_name, category_name, price_data)
     
     return price_img_paths, markup_img_path, price_data
 
