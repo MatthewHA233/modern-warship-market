@@ -24,11 +24,13 @@ import numpy as np
 from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
                             QWidget, QPushButton, QComboBox, QLabel, QTextEdit, 
-                            QGroupBox, QSpinBox, QCheckBox, QProgressBar, QStatusBar)
+                            QGroupBox, QSpinBox, QCheckBox, QProgressBar, QStatusBar,
+                            QLineEdit)
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QFont, QIcon
 import ADBHelper
 from mobile_replayer import MobileReplayer
+from auto_fire_system import AutoFireSystem
 import glob
 
 # 获取脚本所在目录作为基础路径
@@ -296,6 +298,15 @@ class AutoBattleWorker(QThread):
         self.replayer = MobileReplayer()
         self.replayer.set_device(device_id)
         
+        # 初始化自动开火系统
+        self.auto_fire_system = AutoFireSystem(device_id)
+        
+        # 智能视角配置
+        self.setup_smart_view()
+        
+        # 速度检测配置
+        self.setup_speed_detection()
+        
         # 统计数据
         self.start_time = None
         self.battle_count = 0
@@ -316,6 +327,82 @@ class AutoBattleWorker(QThread):
         today = datetime.now().strftime("%Y%m%d")
         self.stats_file = os.path.join(self.stats_dir, "battle_stats_%s.csv" % today)
         
+    def setup_smart_view(self):
+        """设置智能视角功能"""
+        try:
+            # 智能视角模板路径列表
+            smart_view_templates = []
+            
+            # 检查可用的模板文件
+            template_files = [
+                "enemy_ship.png",  # 敌舰模板
+                "templates/enemy_ship.png",  # 备用路径
+                "templates/smart_view/enemy_ship.png",  # 智能视角专用目录
+                "templates/smart_view/target.png",  # 其他目标模板
+            ]
+            
+            for template_file in template_files:
+                template_path = os.path.join(SCRIPT_DIR, template_file)
+                if os.path.exists(template_path):
+                    smart_view_templates.append(template_path)
+                    self.log_message.emit(f"找到智能视角模板: {template_file}")
+            
+            # 如果找到模板，启用智能视角
+            if smart_view_templates:
+                delay_duration = self.config.get("smart_view_delay", 2.0)  # 从配置读取延迟时长
+                self.replayer.enable_smart_view(smart_view_templates, delay_duration)
+                self.log_message.emit(f"智能视角已启用，模板数量: {len(smart_view_templates)}, 延迟: {delay_duration}秒")
+            else:
+                self.log_message.emit("未找到智能视角模板，智能视角功能未启用")
+                self.log_message.emit("可将敌舰图片保存为以下路径之一:")
+                for template_file in template_files:
+                    self.log_message.emit(f"  - {os.path.join(SCRIPT_DIR, template_file)}")
+                    
+        except Exception as e:
+            self.log_message.emit(f"设置智能视角失败: {str(e)}")
+    
+    def setup_speed_detection(self):
+        """设置速度检测功能"""
+        try:
+            # 直接启用速度检测，使用默认配置
+            speed_template_dir = os.path.join(SCRIPT_DIR, "templates/speed")
+            
+            # 检查模板目录是否存在
+            if not os.path.exists(speed_template_dir):
+                self.log_message.emit(f"速度检测模板目录不存在: {speed_template_dir}")
+                self.log_message.emit("请创建目录并放入速度档位模板图片:")
+                self.log_message.emit("  - gear1.png 或 1挡.png (1挡模板)")
+                self.log_message.emit("  - gear2.png 或 2挡.png (2挡模板)")
+                self.log_message.emit("  - reverse.png 或 后退.png (后退挡模板)")
+                return
+            
+            # 启用速度检测
+            self.replayer.enable_speed_detection(speed_template_dir)
+            
+            # 设置速度检测区域（使用你提供的坐标）
+            self.replayer.set_speed_detection_region(430, 723, 455, 757)
+            self.log_message.emit("速度检测区域已设置: (430, 723) -> (455, 757)")
+            
+            self.log_message.emit("速度检测功能已启用")
+                    
+        except Exception as e:
+            self.log_message.emit(f"设置速度检测失败: {str(e)}")
+    
+    def continuous_speed_adjustment(self):
+        """持续检测并调整速度直到归零"""
+        try:
+            if not self.replayer.speed_detection_enabled:
+                self.log_message.emit("速度检测未启用，跳过速度调整")
+                return
+            
+            self.log_message.emit("开始速度调整...")
+            # 直接调用replayer的速度调整方法
+            self.replayer.adjust_speed_after_replay()
+            self.log_message.emit("速度调整完成")
+                
+        except Exception as e:
+            self.log_message.emit(f"速度调整出错: {str(e)}")
+    
     def run(self):
         """主循环"""
         try:
@@ -476,6 +563,16 @@ class AutoBattleWorker(QThread):
             # 设置开局起手时间校准
             start_timing = self.config.get("start_timing_calibration", 0.2)
             self.replayer.set_start_timing_calibration(start_timing)
+            
+            # 配置并启动自动开火系统（如果启用）
+            if self.config.get("auto_fire_enabled", False):
+                auto_fire_delay = self.config.get("auto_fire_delay", 30)
+                self.auto_fire_system.enable(start_delay=auto_fire_delay)
+                self.auto_fire_system.start()
+                self.log_message.emit(f"自动开火系统已启动，将在{auto_fire_delay}秒后开始")
+            else:
+                self.auto_fire_system.disable()
+                self.log_message.emit("自动开火系统未启用")
             
             # 加载并开始回放
             if self.replayer.load_and_replay(self.replay_file):
@@ -665,9 +762,17 @@ class AutoBattleWorker(QThread):
             
             self.log_message.emit("识别奖励失败")
         
+        # 在发送返回键之前进行速度调整
+        self.continuous_speed_adjustment()
+        
         self.log_message.emit("发送返回键")
         self.send_back_key()
         time.sleep(2)
+        
+        # 停止自动开火系统
+        if hasattr(self, 'auto_fire_system'):
+            self.auto_fire_system.stop()
+            self.log_message.emit("自动开火系统已停止")
         
         # 清理cache文件夹
         self.cleanup_cache_files()
@@ -764,6 +869,10 @@ class AutoBattleWorker(QThread):
         self.cycle_start_time = None  # 重置单次循环计时器
         if hasattr(self, 'replayer') and self.replayer.is_replaying():
             self.replayer.stop_replay()
+        
+        # 停止自动开火系统
+        if hasattr(self, 'auto_fire_system'):
+            self.auto_fire_system.stop()
         
         # 停止时清理cache文件
         self.cleanup_cache_files()
@@ -1028,6 +1137,34 @@ class MainWindow(QMainWindow):
         file_row4.addStretch()
         file_layout.addLayout(file_row4)
         
+        # 智能视角设置
+        file_row5 = QHBoxLayout()
+        file_row5.addWidget(QLabel("智能视角延迟(s):"))
+        self.smart_view_delay_spin = QSpinBox()
+        self.smart_view_delay_spin.setRange(0, 10)  # 0-10秒，0表示禁用
+        self.smart_view_delay_spin.setValue(int(self.config.get("smart_view_delay", 2.0)))
+        file_row5.addWidget(self.smart_view_delay_spin)
+        
+        file_row5.addWidget(QLabel("说明: 智能视角延迟时长，0表示禁用"))
+        file_row5.addStretch()
+        file_layout.addLayout(file_row5)
+        
+        # 自动开火设置
+        file_row6 = QHBoxLayout()
+        self.auto_fire_checkbox = QCheckBox("启用自动开火")
+        self.auto_fire_checkbox.setChecked(self.config.get("auto_fire_enabled", False))
+        file_row6.addWidget(self.auto_fire_checkbox)
+        
+        file_row6.addWidget(QLabel("开火延迟(s):"))
+        self.auto_fire_delay_spin = QSpinBox()
+        self.auto_fire_delay_spin.setRange(0, 120)  # 0-120秒
+        self.auto_fire_delay_spin.setValue(int(self.config.get("auto_fire_delay", 30)))
+        file_row6.addWidget(self.auto_fire_delay_spin)
+        
+        file_row6.addWidget(QLabel("说明: 回放开始后多少秒启用自动开火"))
+        file_row6.addStretch()
+        file_layout.addLayout(file_row6)
+        
         main_layout.addWidget(file_group)
         
         # 状态显示组
@@ -1174,7 +1311,10 @@ class MainWindow(QMainWindow):
             "long_press_compensation": 150,
             "check_interval": 2,
             "start_timing_calibration": 0.2,
-            "match_wait_time": 12
+            "match_wait_time": 12,
+            "smart_view_delay": 2.0,
+            "auto_fire_enabled": False,
+            "auto_fire_delay": 30
         }
     
     def save_config(self):
@@ -1186,7 +1326,10 @@ class MainWindow(QMainWindow):
                 "long_press_compensation": self.compensation_spin.value(),
                 "check_interval": self.interval_spin.value(),
                 "start_timing_calibration": self.start_timing_spin.value() / 1000.0,  # 转换为秒
-                "match_wait_time": self.match_wait_spin.value()
+                "match_wait_time": self.match_wait_spin.value(),
+                "smart_view_delay": float(self.smart_view_delay_spin.value()),
+                "auto_fire_enabled": self.auto_fire_checkbox.isChecked(),
+                "auto_fire_delay": self.auto_fire_delay_spin.value()
             }
             
             with open(self.config_file, 'w', encoding='utf-8') as f:
@@ -1278,7 +1421,10 @@ class MainWindow(QMainWindow):
                 "long_press_compensation": self.compensation_spin.value(),
                 "check_interval": self.interval_spin.value(),
                 "start_timing_calibration": self.start_timing_spin.value() / 1000.0,  # 转换为秒
-                "match_wait_time": self.match_wait_spin.value()
+                "match_wait_time": self.match_wait_spin.value(),
+                "smart_view_delay": float(self.smart_view_delay_spin.value()),
+                "auto_fire_enabled": self.auto_fire_checkbox.isChecked(),
+                "auto_fire_delay": self.auto_fire_delay_spin.value()
             }
             
             # 创建工作线程

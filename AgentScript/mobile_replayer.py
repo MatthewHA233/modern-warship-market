@@ -9,6 +9,8 @@ import os
 import subprocess
 from datetime import datetime
 import ADBHelper
+import cv2
+import numpy as np
 
 class MobileReplayer:
     """手机端回放器类"""
@@ -19,6 +21,18 @@ class MobileReplayer:
         self.device_id = ""
         self.long_press_compensation = 150  # 长按补偿时间(ms)，可通过配置修改
         self.start_timing_calibration = 0.2  # 开局起手时间校准(秒)，默认0.2秒
+        
+        # 智能视角相关参数
+        self.smart_view_enabled = False  # 是否启用智能视角
+        self.smart_view_templates = []  # 模板图片路径列表
+        self.smart_view_delay_duration = 2.0  # 延迟时长(秒)
+        self.smart_view_check_interval = 0.5  # 检查间隔(秒)
+        self.delayed_view_threads = {}  # 存储被延迟的视角线程
+        
+        # 速度检测相关参数
+        self.speed_detection_enabled = False  # 是否启用速度检测
+        self.speed_templates = {}  # 速度档位模板 {'gear1': 'path', 'gear2': 'path', 'reverse': 'path'}
+        self.speed_detection_region = (430, 723, 455, 757)  # 速度检测区域 (x1, y1, x2, y2)
         
     def get_available_devices(self):
         """获取可用设备列表"""
@@ -38,6 +52,337 @@ class MobileReplayer:
         """设置开局起手时间校准"""
         self.start_timing_calibration = calibration_seconds
         print(f"开局起手时间校准已设置为: {calibration_seconds}秒")
+    
+    def enable_smart_view(self, template_paths: list, delay_duration: float = 2.0):
+        """启用智能视角功能
+        
+        Args:
+            template_paths: 模板图片路径列表
+            delay_duration: 延迟时长(秒)
+        """
+        self.smart_view_enabled = True
+        self.smart_view_templates = template_paths
+        self.smart_view_delay_duration = delay_duration
+        print(f"智能视角已启用，模板数量: {len(template_paths)}, 延迟时长: {delay_duration}秒")
+    
+    def disable_smart_view(self):
+        """禁用智能视角功能"""
+        self.smart_view_enabled = False
+        self.smart_view_templates = []
+        print("智能视角已禁用")
+    
+    def enable_speed_detection(self, templates_dict_or_dir):
+        """启用速度检测功能
+        
+        Args:
+            templates_dict_or_dir: 可以是模板字典 {'gear1': 'path', 'gear2': 'path', 'reverse': 'path'}
+                                 或者是包含模板文件的目录路径
+        """
+        if isinstance(templates_dict_or_dir, dict):
+            # 直接使用提供的模板字典
+            self.speed_templates = templates_dict_or_dir
+        elif isinstance(templates_dict_or_dir, str) and os.path.isdir(templates_dict_or_dir):
+            # 从目录加载模板
+            self.speed_templates = {}
+            template_dir = templates_dict_or_dir
+            
+            # 定义模板文件名映射
+            template_mapping = {
+                'gear1': ['gear1.png', '1挡.png', 'speed1.png'],
+                'gear2': ['gear2.png', '2挡.png', 'speed2.png'],
+                'reverse': ['reverse.png', '后退.png', 'backward.png']
+            }
+            
+            # 搜索模板文件
+            for gear_type, possible_names in template_mapping.items():
+                for name in possible_names:
+                    template_path = os.path.join(template_dir, name)
+                    if os.path.exists(template_path):
+                        self.speed_templates[gear_type] = template_path
+                        print(f"找到{gear_type}模板: {template_path}")
+                        break
+            
+            if not self.speed_templates:
+                print(f"警告: 在目录 {template_dir} 中未找到任何速度模板")
+                return
+        else:
+            print("错误: 无效的模板参数")
+            return
+        
+        self.speed_detection_enabled = True
+        print(f"速度检测已启用，模板数量: {len(self.speed_templates)}")
+    
+    def disable_speed_detection(self):
+        """禁用速度检测功能"""
+        self.speed_detection_enabled = False
+        self.speed_templates = {}
+        print("速度检测已禁用")
+    
+    def set_speed_detection_region(self, x1, y1, x2, y2):
+        """设置速度检测区域"""
+        self.speed_detection_region = (x1, y1, x2, y2)
+        print(f"速度检测区域已设置为: ({x1}, {y1}) -> ({x2}, {y2})")
+    
+    def detect_current_speed(self):
+        """检测当前速度档位
+        
+        Returns:
+            str: 'gear1', 'gear2', 'reverse', 'neutral', 'unknown'
+        """
+        if not self.speed_detection_enabled or not self.speed_templates:
+            return 'unknown'
+        
+        try:
+            # 截取屏幕
+            screen_img = self.capture_screen_for_detection()
+            if screen_img is None:
+                return 'unknown'
+            
+            # 裁剪检测区域
+            x1, y1, x2, y2 = self.speed_detection_region
+            h, w = screen_img.shape[:2]
+            x1 = max(0, min(x1, w))
+            y1 = max(0, min(y1, h))
+            x2 = max(x1, min(x2, w))
+            y2 = max(y1, min(y2, h))
+            
+            region_img = screen_img[y1:y2, x1:x2]
+            
+            # 检测各种速度档位
+            best_match = 'unknown'
+            best_confidence = 0.7  # 最低匹配阈值
+            
+            for gear_type, template_path in self.speed_templates.items():
+                if not os.path.exists(template_path):
+                    continue
+                
+                template = cv2.imread(template_path)
+                if template is None:
+                    continue
+                
+                # 模板匹配
+                result = cv2.matchTemplate(region_img, template, cv2.TM_CCOEFF_NORMED)
+                _, max_val, _, _ = cv2.minMaxLoc(result)
+                
+                print(f"速度检测 - {gear_type}: 匹配度 {max_val:.3f}")
+                
+                if max_val > best_confidence:
+                    best_confidence = max_val
+                    best_match = gear_type
+            
+            if best_match == 'unknown':
+                print("速度检测: 未检测到明确的档位，可能为空挡")
+                return 'neutral'
+            else:
+                print(f"速度检测: 当前档位为 {best_match} (置信度: {best_confidence:.3f})")
+                return best_match
+                
+        except Exception as e:
+            print(f"速度检测出错: {str(e)}")
+            return 'unknown'
+    
+    def _execute_key_press(self, key, count=1):
+        """执行按键操作
+        
+        Args:
+            key: 按键 ('w', 's')
+            count: 点击次数
+        """
+        try:
+            # 根据按键设置坐标
+            key_positions = {
+                'w': (640, 800),  # W键坐标，需要根据实际游戏界面调整
+                's': (640, 900),  # S键坐标，需要根据实际游戏界面调整
+            }
+            
+            if key.lower() not in key_positions:
+                print(f"不支持的按键: {key}")
+                return
+            
+            position = key_positions[key.lower()]
+            
+            for i in range(count):
+                ADBHelper.touch(self.device_id, position)
+                print(f"执行按键 {key.upper()} (第{i+1}次)")
+                if i < count - 1:  # 最后一次不需要等待
+                    time.sleep(0.2)  # 按键间隔
+                    
+        except Exception as e:
+            print(f"执行按键出错: {str(e)}")
+    
+    def adjust_speed_after_replay(self):
+        """回放结束后调整速度到空挡"""
+        if not self.speed_detection_enabled:
+            print("速度检测未启用，跳过速度调整")
+            return
+        
+        print("开始速度调整...")
+        max_attempts = 10  # 最多尝试10次
+        attempt_count = 0
+        
+        while attempt_count < max_attempts:
+            attempt_count += 1
+            print(f"速度调整第{attempt_count}次尝试...")
+            
+            # 等待一下再检测
+            time.sleep(1)
+            
+            # 检测当前速度
+            current_speed = self.detect_current_speed()
+            
+            if current_speed == 'unknown':
+                print(f"第{attempt_count}次检测: 无法识别速度档位")
+                continue
+            elif current_speed == 'gear2':
+                print(f"第{attempt_count}次检测: 发现2挡，点击2次S键")
+                self._execute_key_press('s', 2)
+                time.sleep(1)  # 等待按键执行完成
+            elif current_speed == 'gear1':
+                print(f"第{attempt_count}次检测: 发现1挡，点击1次S键")
+                self._execute_key_press('s', 1)
+                time.sleep(1)  # 等待按键执行完成
+            elif current_speed == 'reverse':
+                print(f"第{attempt_count}次检测: 发现后退挡，点击1次W键")
+                self._execute_key_press('w', 1)
+                time.sleep(1)  # 等待按键执行完成
+            else:
+                print(f"第{attempt_count}次检测: 速度已归零或处于空挡，调整完成")
+                break
+            
+            # 检测调整是否成功
+            time.sleep(0.5)
+            new_speed = self.detect_current_speed()
+            if new_speed == current_speed:
+                print(f"速度调整似乎无效，当前仍为: {current_speed}")
+            else:
+                print(f"速度已从 {current_speed} 调整为 {new_speed}")
+        
+        if attempt_count >= max_attempts:
+            print("已达到最大尝试次数，停止速度调整")
+        else:
+            print("速度调整完成")
+    
+    def capture_screen_for_detection(self):
+        """为图色识别截取屏幕"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            cache_dir = os.path.join(os.path.dirname(__file__), "cache")
+            os.makedirs(cache_dir, exist_ok=True)
+            screenshot_path = os.path.join(cache_dir, f"smart_view_screen_{timestamp}.png")
+            
+            if ADBHelper.screenCapture(self.device_id, screenshot_path):
+                img = cv2.imread(screenshot_path)
+                # 清理临时文件
+                try:
+                    os.remove(screenshot_path)
+                except:
+                    pass
+                return img
+            return None
+        except Exception as e:
+            print(f"智能视角截屏失败: {str(e)}")
+            return None
+    
+    def detect_template_in_regions(self, screen_img):
+        """检测模板在屏幕左右区域的位置
+        
+        Args:
+            screen_img: 屏幕截图
+            
+        Returns:
+            dict: {'left': bool, 'right': bool} 表示模板在左右区域的检测结果
+        """
+        if not self.smart_view_templates or screen_img is None:
+            return {'left': False, 'right': False}
+        
+        try:
+            h, w = screen_img.shape[:2]
+            # 修改区域划分：左侧50%，右侧50%，中间不重叠
+            left_region = screen_img[:, :int(w * 0.5)]  # 左侧50%区域
+            right_region = screen_img[:, int(w * 0.5):]  # 右侧50%区域
+            
+            result = {'left': False, 'right': False, 'left_confidence': 0, 'right_confidence': 0}
+            
+            for template_path in self.smart_view_templates:
+                if not os.path.exists(template_path):
+                    continue
+                    
+                template = cv2.imread(template_path)
+                if template is None:
+                    continue
+                
+                # 检测左侧区域
+                try:
+                    res_left = cv2.matchTemplate(left_region, template, cv2.TM_CCOEFF_NORMED)
+                    _, max_val_left, _, _ = cv2.minMaxLoc(res_left)
+                    if max_val_left > 0.7:  # 匹配阈值
+                        result['left'] = True
+                        result['left_confidence'] = max_val_left
+                        print(f"在左侧区域检测到模板: {os.path.basename(template_path)} (匹配度: {max_val_left:.3f})")
+                except:
+                    pass
+                
+                # 检测右侧区域
+                try:
+                    res_right = cv2.matchTemplate(right_region, template, cv2.TM_CCOEFF_NORMED)
+                    _, max_val_right, _, _ = cv2.minMaxLoc(res_right)
+                    if max_val_right > 0.7:  # 匹配阈值
+                        result['right'] = True
+                        result['right_confidence'] = max_val_right
+                        print(f"在右侧区域检测到模板: {os.path.basename(template_path)} (匹配度: {max_val_right:.3f})")
+                except:
+                    pass
+            
+            # 如果两边都检测到，选择置信度更高的一边
+            if result['left'] and result['right']:
+                if result['left_confidence'] > result['right_confidence']:
+                    result['right'] = False
+                    print(f"智能视角: 两侧都检测到目标，选择置信度更高的左侧 ({result['left_confidence']:.3f} > {result['right_confidence']:.3f})")
+                else:
+                    result['left'] = False
+                    print(f"智能视角: 两侧都检测到目标，选择置信度更高的右侧 ({result['right_confidence']:.3f} > {result['left_confidence']:.3f})")
+            
+            return result
+            
+        except Exception as e:
+            print(f"模板检测出错: {str(e)}")
+            return {'left': False, 'right': False}
+    
+    def should_cancel_view_action(self, action):
+        """判断是否应该取消视角动作（用于预检测）
+        
+        Args:
+            action: 动作数据
+            
+        Returns:
+            bool: 是否应该取消动作
+        """
+        try:
+            direction = action.get('direction', '')
+            
+            # 截屏检测
+            screen_img = self.capture_screen_for_detection()
+            if screen_img is None:
+                return False
+            
+            # 检测模板位置
+            detection_result = self.detect_template_in_regions(screen_img)
+            
+            # 决策逻辑：如果检测到目标在相应区域，取消视角移动
+            # 如果敌舰在左侧区域，取消"向右移动视角"的操作
+            if direction == 'view_right' and detection_result['left']:
+                print(f"智能视角: 敌舰在左侧，取消向右视角操作（保持对准目标）")
+                return True
+            # 如果敌舰在右侧区域，取消"向左移动视角"的操作
+            elif direction == 'view_left' and detection_result['right']:
+                print(f"智能视角: 敌舰在右侧，取消向左视角操作（保持对准目标）")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"智能视角预检测出错: {str(e)}")
+            return False
     
     def load_and_replay(self, recording_file: str):
         """加载并回放录制文件"""
@@ -63,6 +408,8 @@ class MobileReplayer:
             print(f"共 {len(calibrated_actions)} 个动作")
             print(f"长按补偿: +{self.long_press_compensation}ms")
             print(f"开局起手时间校准: {self.start_timing_calibration}秒")
+            if self.smart_view_enabled:
+                print(f"智能视角: 已启用，模板数量: {len(self.smart_view_templates)}")
             
             # 启动回放线程
             self.replay_thread = threading.Thread(
@@ -157,6 +504,8 @@ class MobileReplayer:
                 print("回放被用户停止")
             else:
                 print("所有动作执行完成")
+                # 回放完成后进行速度检测和调整
+                self.adjust_speed_after_replay()
             
         except Exception as e:
             print(f"回放执行出错: {str(e)}")
@@ -171,16 +520,47 @@ class MobileReplayer:
                 target_timestamp = action.get('timestamp', 0)
                 target_absolute_time = start_time + target_timestamp
                 
-                # 等待到指定的绝对时间点
+                # 智能视角预检测时间（提前500毫秒）
+                pre_check_time = target_absolute_time - 0.5
+                current_time = time.time()
+                
+                # 是否需要智能视角检测
+                action_type = action.get('type')
+                direction = action.get('direction', '')
+                needs_smart_check = (self.smart_view_enabled and 
+                                   (target_timestamp >= 30.0) and  # 30秒后才启用
+                                   action_type in ['view_control', 'swipe'] and 
+                                   direction in ['view_left', 'view_right'])
+                
+                should_cancel = False
+                
+                # 如果需要智能检测，提前500ms开始检测
+                if needs_smart_check and current_time < pre_check_time:
+                    # 等待到预检测时间
+                    delay_to_precheck = pre_check_time - current_time
+                    if delay_to_precheck > 0:
+                        time.sleep(delay_to_precheck)
+                    
+                    if not self.replaying:
+                        return
+                    
+                    # 执行预检测
+                    print(f"智能视角预检测: {direction} (提前500ms检测)")
+                    should_cancel = self.should_cancel_view_action(action)
+                    
+                    if should_cancel:
+                        print(f"🚫 智能视角: 已取消 {action_type} 动作 [{direction}] (检测到目标，避免视角移开)")
+                        return  # 直接返回，不执行这个动作
+                
+                # 等待到正常执行时间
                 current_time = time.time()
                 delay = target_absolute_time - current_time
-                
                 if delay > 0:
                     time.sleep(delay)
                 
                 if not self.replaying:
                     return
-                    
+                
                 # 执行动作
                 self._execute_action(action)
                 
@@ -198,9 +578,14 @@ class MobileReplayer:
             action_type = action.get('type')
             key = action.get('key', '')
             source = action.get('source', 'unknown')  # 获取动作来源
+            direction = action.get('direction', '')  # 获取方向信息
             
-            # 输出动作信息，包含来源
+            # 输出动作信息，包含来源和方向
             action_info = f"{key} ({source})" if source != 'unknown' else key
+            if direction:
+                action_info += f" [{direction}]"
+            
+            print(f"开始执行动作: {action_type} - {action_info}")
             
             if action_type == 'tap':
                 # 点按动作
@@ -256,10 +641,11 @@ class MobileReplayer:
                     start_pos = action['start_position']
                     end_pos = action['end_position']
                     duration = action.get('duration', 300)
-                    direction = action.get('direction', 'unknown')
                     
                     ADBHelper.slide(self.device_id, start_pos, end_pos, duration)
                     print(f"执行滑动: {direction} ({source}) {start_pos} -> {end_pos}, 时长: {duration}ms")
+                else:
+                    print(f"跳过滑动操作: 缺少位置信息 - {action}")
             else:
                 # 未知动作类型
                 print(f"跳过未知动作类型: {action_type} ({source})")
@@ -354,6 +740,8 @@ def main():
             console.print("• d + 数字 - 选择设备 (如: d1)")
             console.print("• c + 数字 - 设置长按补偿 (如: c200)")
             console.print("• t + 数字 - 设置开局起手时间校准 (如: t0.2, 单位秒)")
+            console.print("• sv + 路径 - 启用智能视角 (如: sv templates/enemy.png)")
+            console.print("• svoff - 禁用智能视角")
             console.print("• s - 停止当前回放")
             console.print("• r - 刷新列表")
             console.print("• q - 退出程序")
@@ -414,6 +802,20 @@ def main():
                 except ValueError:
                     console.print("[red]无效的校准时间格式[/red]")
                     
+            elif choice.startswith('sv ') and len(choice) > 3:
+                # 启用智能视角
+                template_path = choice[3:].strip()
+                if os.path.exists(template_path):
+                    replayer.enable_smart_view([template_path])
+                    console.print(f"[green]智能视角已启用，模板: {template_path}[/green]")
+                else:
+                    console.print(f"[red]模板文件不存在: {template_path}[/red]")
+                    
+            elif choice == 'svoff':
+                # 禁用智能视角
+                replayer.disable_smart_view()
+                console.print("[yellow]智能视角已禁用[/yellow]")
+                    
             elif choice.isdigit():
                 # 选择文件回放
                 file_index = int(choice) - 1
@@ -433,6 +835,8 @@ def main():
                     console.print(f"[green]目标设备: {replayer.device_id}[/green]")
                     console.print(f"[yellow]长按补偿: {replayer.long_press_compensation}ms (可通过c+数字修改)[/yellow]")
                     console.print(f"[yellow]开局起手时间校准: {replayer.start_timing_calibration}秒[/yellow]")
+                    if replayer.smart_view_enabled:
+                        console.print(f"[yellow]智能视角: 已启用，模板数量: {len(replayer.smart_view_templates)}[/yellow]")
                     
                     confirm = input("确认开始回放? (y/n): ").strip().lower()
                     if confirm in ['y', 'yes', '']:
