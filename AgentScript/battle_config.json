@@ -7,13 +7,5 @@
   "match_wait_time": 12,
   "smart_view_delay": 2.0,
   "auto_fire_enabled": true,
-  "auto_fire_delay": 20,
-  "speed_detection_enabled": true,
-  "speed_template_dir": "templates/speed",
-  "speed_detection_region": [
-    430,
-    723,
-    455,
-    757
-  ]
+  "auto_fire_delay": 20
 }

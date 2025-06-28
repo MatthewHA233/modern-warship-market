@@ -24,8 +24,7 @@ import numpy as np
 from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
                             QWidget, QPushButton, QComboBox, QLabel, QTextEdit, 
-                            QGroupBox, QSpinBox, QCheckBox, QProgressBar, QStatusBar,
-                            QLineEdit)
+                            QGroupBox, QSpinBox, QCheckBox, QProgressBar, QStatusBar)
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QFont, QIcon
 import ADBHelper
@@ -304,9 +303,6 @@ class AutoBattleWorker(QThread):
         # 智能视角配置
         self.setup_smart_view()
         
-        # 速度检测配置
-        self.setup_speed_detection()
-        
         # 统计数据
         self.start_time = None
         self.battle_count = 0
@@ -360,48 +356,6 @@ class AutoBattleWorker(QThread):
                     
         except Exception as e:
             self.log_message.emit(f"设置智能视角失败: {str(e)}")
-    
-    def setup_speed_detection(self):
-        """设置速度检测功能"""
-        try:
-            # 直接启用速度检测，使用默认配置
-            speed_template_dir = os.path.join(SCRIPT_DIR, "templates/speed")
-            
-            # 检查模板目录是否存在
-            if not os.path.exists(speed_template_dir):
-                self.log_message.emit(f"速度检测模板目录不存在: {speed_template_dir}")
-                self.log_message.emit("请创建目录并放入速度档位模板图片:")
-                self.log_message.emit("  - gear1.png 或 1挡.png (1挡模板)")
-                self.log_message.emit("  - gear2.png 或 2挡.png (2挡模板)")
-                self.log_message.emit("  - reverse.png 或 后退.png (后退挡模板)")
-                return
-            
-            # 启用速度检测
-            self.replayer.enable_speed_detection(speed_template_dir)
-            
-            # 设置速度检测区域（使用你提供的坐标）
-            self.replayer.set_speed_detection_region(430, 723, 455, 757)
-            self.log_message.emit("速度检测区域已设置: (430, 723) -> (455, 757)")
-            
-            self.log_message.emit("速度检测功能已启用")
-                    
-        except Exception as e:
-            self.log_message.emit(f"设置速度检测失败: {str(e)}")
-    
-    def continuous_speed_adjustment(self):
-        """持续检测并调整速度直到归零"""
-        try:
-            if not self.replayer.speed_detection_enabled:
-                self.log_message.emit("速度检测未启用，跳过速度调整")
-                return
-            
-            self.log_message.emit("开始速度调整...")
-            # 直接调用replayer的速度调整方法
-            self.replayer.adjust_speed_after_replay()
-            self.log_message.emit("速度调整完成")
-                
-        except Exception as e:
-            self.log_message.emit(f"速度调整出错: {str(e)}")
     
     def run(self):
         """主循环"""
@@ -761,9 +715,6 @@ class AutoBattleWorker(QThread):
                 self.log_message.emit("识别奖励失败，但战斗时间: %.1f分钟 (%.0f秒)" % (battle_duration_minutes, battle_duration))
             
             self.log_message.emit("识别奖励失败")
-        
-        # 在发送返回键之前进行速度调整
-        self.continuous_speed_adjustment()
         
         self.log_message.emit("发送返回键")
         self.send_back_key()
