@@ -1,0 +1,107 @@
+{
+  "device_id": "",
+  "total_duration": 78.61898517608643,
+  "total_actions": 14,
+  "created_time": "2025-06-25T16:32:18.507377",
+  "actions": [
+    {
+      "type": "tap",
+      "key": "w",
+      "position": [
+        442,
+        702
+      ],
+      "timestamp": 1.0966076850891113,
+      "duration": 50,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "w",
+      "position": [
+        442,
+        702
+      ],
+      "timestamp": 1.2455899715423584,
+      "duration": 50,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 6.034008979797363,
+      "duration": 2732,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 10.957554578781128,
+      "duration": 553,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 12.637212753295898,
+      "duration": 599,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 14.173117876052856,
+      "duration": 2427,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "d",
+      "position": [
+        680,
+        813
+      ],
+      "timestamp": 14.724557876586914,
+      "duration": 3690,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "s",
+      "position": [
+        442,
+        917
+      ],
+      "timestamp": 32.8975031375885,
+      "duration": 50,
+      "executed": true
+    },
+    {
+      "type": "tap",
+      "key": "s",
+      "position": [
+        442,
+        917
+      ],
+      "timestamp": 33.95047736167908,
+      "duration": 50,
+      "executed": true
+    }
+  ]
+}

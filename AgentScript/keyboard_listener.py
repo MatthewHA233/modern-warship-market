@@ -100,6 +100,10 @@ class KeyboardListener:
         """按键按下事件处理"""
         if not self.listening or not self.recorder.is_recording():
             return
+        
+        # 立即记录时间戳，减少处理延迟
+        event_timestamp = time.time()
+        relative_timestamp = event_timestamp - self.recorder.start_time if self.recorder.start_time else 0
             
         key_name = event.name.lower()
         current_time = time.time()
@@ -116,12 +120,12 @@ class KeyboardListener:
         
         # 视角控制按键（方向键）- 两种模式都支持
         if key_name in ['up', 'down', 'left', 'right']:
-            self._handle_key_press(key_name)
+            self._handle_key_press(key_name, relative_timestamp)
             return
             
         # 视角模式切换按键 - 两种模式都支持
         if key_name in ['z', 'x']:
-            self._handle_key_press(key_name)
+            self._handle_key_press(key_name, relative_timestamp)
             return
         
         # 检查是否在键位映射中
@@ -135,8 +139,7 @@ class KeyboardListener:
                     
                     # 上下是点按
                     if action in ['up', 'down']:
-                        # 计算相对于录制开始的时间戳
-                        relative_timestamp = current_time - self.recorder.start_time if self.recorder.start_time else 0
+                        # 使用事件开始时的时间戳
                         self.recorder.record_tap(key_name, position, timestamp=relative_timestamp)
                         print(f"录制PC点按: {action} -> {position}, 时间戳: {relative_timestamp:.3f}s")
                     
@@ -145,7 +148,7 @@ class KeyboardListener:
                         # 避免重复按键
                         if key_name not in self.pressed_keys:
                             self.pressed_keys.add(key_name)
-                            self.key_press_times[key_name] = current_time
+                            self.key_press_times[key_name] = event_timestamp  # 使用事件时间戳
                             print(f"PC长按开始: {action} -> {position}")
                 return  # PC模式下忽略武器和特殊功能
             
@@ -154,7 +157,7 @@ class KeyboardListener:
                 # 对于点击类型的按键，允许连续点击
                 if action in ['up', 'down'] or action in WEAPON_CONTROLS or action in SPECIAL_CONTROLS:
                     # 直接处理点击，不需要记录到pressed_keys
-                    self._handle_key_press(key_name)
+                    self._handle_key_press(key_name, relative_timestamp)
                     return
                     
                 # 对于长按类型的按键，使用预设时长
@@ -163,29 +166,36 @@ class KeyboardListener:
                     
                     # 使用预设时长长按
                     duration = self.preset_durations[self.current_preset]
-                    print(f"执行预设长按 - {key_name}, 时长: {duration}ms")
+                    print(f"执行预设长按 - {key_name}, 时长: {duration}ms, 时间戳: {relative_timestamp:.3f}s")
                     
-                    # 录制预设长按动作
-                    self.recorder.record_tap(key_name, position, duration=duration)
+                    # 先录制预设长按动作（使用事件开始时的时间戳）
+                    self.recorder.record_tap(key_name, position, duration=duration, timestamp=relative_timestamp)
                     
-                    # 执行ADB预设长按操作
+                    # 异步执行ADB预设长按操作，避免阻塞
                     device_id = self.recorder.device_id
                     if device_id:
-                        # 使用传统的长按方法，指定确切时长
-                        self._execute_preset_long_press(device_id, position, duration)
+                        def execute_async():
+                            # 使用传统的长按方法，指定确切时长
+                            self._execute_preset_long_press(device_id, position, duration)
+                        thread = threading.Thread(target=execute_async, daemon=True)
+                        thread.start()
                     
                     return
         
         # 处理其他按键
         if key_name not in self.pressed_keys:
             self.pressed_keys.add(key_name)
-            self.key_press_times[key_name] = current_time
-            self._handle_key_press(key_name)
+            self.key_press_times[key_name] = event_timestamp  # 使用事件时间戳
+            self._handle_key_press(key_name, relative_timestamp)
         
     def _on_key_release(self, event):
         """按键释放事件处理"""
         if not self.listening or not self.recorder.is_recording():
             return
+        
+        # 立即记录时间戳，减少处理延迟
+        event_timestamp = time.time()
+        relative_timestamp = event_timestamp - self.recorder.start_time if self.recorder.start_time else 0
             
         key_name = event.name.lower()
         
@@ -212,7 +222,7 @@ class KeyboardListener:
                     if key_name in self.pressed_keys:
                         print(f"处理长按释放 - {key_name}")
                         self.pressed_keys.remove(key_name)
-                        self._handle_key_release(key_name)
+                        self._handle_key_release(key_name, relative_timestamp)
                     else:
                         print(f"长按按键不在pressed_keys中 - {key_name}")
                     return
@@ -227,9 +237,9 @@ class KeyboardListener:
         self.pressed_keys.remove(key_name)
         
         # 处理按键释放
-        self._handle_key_release(key_name)
+        self._handle_key_release(key_name, relative_timestamp)
             
-    def _handle_key_press(self, key_name: str):
+    def _handle_key_press(self, key_name: str, relative_timestamp: float):
         """处理按键按下"""
         try:
             device_id = self.recorder.device_id
@@ -250,14 +260,17 @@ class KeyboardListener:
             # 视角控制
             if key_name in ['up', 'down', 'left', 'right']:
                 direction = f'view_{key_name}'
-                # 计算相对于录制开始的时间戳
-                current_time = time.time()
-                relative_timestamp = current_time - self.recorder.start_time if self.recorder.start_time else 0
+                # 使用事件开始时的时间戳
                 self.recorder.record_view_control(direction, timestamp=relative_timestamp)
                 
-                # 执行视角控制的ADB操作
+                # 异步执行视角控制的ADB操作，避免阻塞时间戳记录
                 if self.recording_mode == 'adb':
-                    self._execute_view_control(key_name, device_id)
+                    # 创建独立线程执行ADB操作，不等待完成
+                    def execute_async():
+                        self._execute_view_control(key_name, device_id)
+                    
+                    thread = threading.Thread(target=execute_async, daemon=True)
+                    thread.start()
                 return
                 
             # 检查是否在键位映射中
@@ -272,51 +285,67 @@ class KeyboardListener:
                 
                 # 上下是点按，左右是长按
                 if action in ['up', 'down']:
-                    # 录制点按动作
-                    self.recorder.record_tap(key_name, position)
-                    # 执行ADB点按操作
-                    ADBHelper.touch(device_id, position)
-                    print(f"执行点按操作: {action} -> {position}")
+                    # 先录制点按动作（使用事件开始时的时间戳）
+                    self.recorder.record_tap(key_name, position, timestamp=relative_timestamp)
+                    # 异步执行ADB点按操作，避免阻塞
+                    def execute_async():
+                        ADBHelper.touch(device_id, position)
+                    thread = threading.Thread(target=execute_async, daemon=True)
+                    thread.start()
+                    print(f"执行点按操作: {action} -> {position}, 时间戳: {relative_timestamp:.3f}s")
                     
                 elif action in ['left', 'right']:
-                    # 录制长按开始
+                    # 先录制长按开始（使用事件开始时的时间戳）
                     self.recorder.record_long_press_start(key_name, position)
-                    # 开始ADB长按
-                    ADBHelper.startLongPress(device_id, position)
-                    print(f"开始长按操作: {action} -> {position}")
+                    # 手动设置时间戳
+                    if self.recorder.actions:
+                        self.recorder.actions[-1]['timestamp'] = relative_timestamp
+                    # 异步开始ADB长按，避免阻塞
+                    def execute_async():
+                        ADBHelper.startLongPress(device_id, position)
+                    thread = threading.Thread(target=execute_async, daemon=True)
+                    thread.start()
+                    print(f"开始长按操作: {action} -> {position}, 时间戳: {relative_timestamp:.3f}s")
                     
             # 武器控制 - 点按
             elif action in WEAPON_CONTROLS:
                 position = WEAPON_CONTROLS[action]
-                # 录制点按动作
-                self.recorder.record_tap(key_name, position)
-                # 执行ADB点按操作
-                ADBHelper.touch(device_id, position)
-                print(f"执行武器发射: {action} -> {position}")
+                # 先录制点按动作（使用事件开始时的时间戳）
+                self.recorder.record_tap(key_name, position, timestamp=relative_timestamp)
+                # 异步执行ADB点按操作，避免阻塞
+                def execute_async():
+                    ADBHelper.touch(device_id, position)
+                thread = threading.Thread(target=execute_async, daemon=True)
+                thread.start()
+                print(f"执行武器发射: {action} -> {position}, 时间戳: {relative_timestamp:.3f}s")
                 
             # 特殊功能 - 点按
             elif action in SPECIAL_CONTROLS:
                 position = SPECIAL_CONTROLS[action]
-                # 录制点按动作
-                self.recorder.record_tap(key_name, position)
-                # 执行ADB点按操作
-                ADBHelper.touch(device_id, position)
-                print(f"执行特殊功能: {action} -> {position}")
+                # 先录制点按动作（使用事件开始时的时间戳）
+                self.recorder.record_tap(key_name, position, timestamp=relative_timestamp)
+                # 异步执行ADB点按操作，避免阻塞
+                def execute_async():
+                    ADBHelper.touch(device_id, position)
+                thread = threading.Thread(target=execute_async, daemon=True)
+                thread.start()
+                print(f"执行特殊功能: {action} -> {position}, 时间戳: {relative_timestamp:.3f}s")
                 
         except Exception as e:
             print(f"处理按键按下时出错: {str(e)}")
             
-    def _handle_key_release(self, key_name: str):
+    def _handle_key_release(self, key_name: str, relative_timestamp: float):
         """处理按键释放"""
         try:
             device_id = self.recorder.device_id
             if not device_id:
                 return
                 
-            # 计算实际按下时长
+            # 计算实际按下时长（使用绝对时间）
             actual_duration = 0
             if key_name in self.key_press_times:
-                actual_duration = time.time() - self.key_press_times[key_name]
+                current_absolute_time = time.time()
+                actual_duration = current_absolute_time - self.key_press_times[key_name]
                 del self.key_press_times[key_name]
             
             # 只有长按类型的按键需要处理释放事件
@@ -329,12 +358,25 @@ class KeyboardListener:
             if action in ['left', 'right']:
                 position = MOVEMENT_CONTROLS[action]
                 
-                # 结束ADB长按
-                ADBHelper.endLongPress(device_id, position)
-                # 录制长按结束
+                # 先录制长按结束（使用准确的时间戳）
                 self.recorder.record_long_press_end(key_name, position)
-                print(f"结束长按操作: {action} -> 持续时间 {actual_duration*1000:.0f}ms")
-                    
+                # 手动设置结束时间戳
+                if self.recorder.actions:
+                    # 查找最后一个匹配的长按动作并更新其结束时间戳
+                    for i in range(len(self.recorder.actions) - 1, -1, -1):
+                        action_record = self.recorder.actions[i]
+                        if (action_record.get('key') == key_name and 
+                            action_record.get('type') == 'long_press'):
+                            action_record['end_timestamp'] = relative_timestamp
+                            break
+                
+                # 异步结束ADB长按，避免阻塞
+                def execute_async():
+                    ADBHelper.endLongPress(device_id, position)
+                thread = threading.Thread(target=execute_async, daemon=True)
+                thread.start()
+                print(f"结束长按操作: {action} -> {position}, 结束时间戳: {relative_timestamp:.3f}s, 实际时长: {actual_duration*1000:.0f}ms")
+                
         except Exception as e:
             print(f"处理按键释放时出错: {str(e)}")
             
@@ -343,7 +385,8 @@ class KeyboardListener:
         try:
             # 根据当前视角模式设置滑动参数
             speed = VIEW_CONTROL['slow_speed'] if self.view_mode == 'slow' else VIEW_CONTROL['fast_speed']
-            distance = VIEW_CONTROL['swipe_distance']
+            # 慢速模式使用更小的滑动距离
+            distance = VIEW_CONTROL['slow_swipe_distance'] if self.view_mode == 'slow' else VIEW_CONTROL['swipe_distance']
             
             # 计算滑动的起点和终点
             center_x, center_y = SCREEN_CENTER
@@ -365,7 +408,7 @@ class KeyboardListener:
                 
             # 执行滑动操作
             ADBHelper.slide(device_id, start_pos, end_pos, speed)
-            print(f"执行视角控制: {direction} ({self.view_mode}模式) {start_pos} -> {end_pos}")
+            print(f"执行视角控制: {direction} ({self.view_mode}模式) 距离: {distance}px, {start_pos} -> {end_pos}")
             
         except Exception as e:
             print(f"执行视角控制出错: {str(e)}")

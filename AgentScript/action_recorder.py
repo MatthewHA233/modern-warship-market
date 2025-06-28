@@ -16,6 +16,7 @@ class ActionRecorder:
         self.device_id = ""
         self.pc_replay_file = None  # 记录使用的PC回放文件
         self.pc_replay_actions = []  # 存储PC回放的动作
+        self.long_press_compensation = 150  # 长按补偿时间(ms)，默认150ms
         
     def start_recording(self, device_id: str = "", clear_existing: bool = True):
         """开始录制
@@ -146,7 +147,8 @@ class ActionRecorder:
             
         # 根据当前视角模式设置滑动参数
         speed = VIEW_CONTROL['slow_speed'] if self.current_view_mode == 'slow' else VIEW_CONTROL['fast_speed']
-        distance = VIEW_CONTROL['swipe_distance']
+        # 慢速模式使用更小的滑动距离
+        distance = VIEW_CONTROL['slow_swipe_distance'] if self.current_view_mode == 'slow' else VIEW_CONTROL['swipe_distance']
         
         # 计算滑动的起点和终点
         center_x, center_y = SCREEN_CENTER
@@ -176,7 +178,7 @@ class ActionRecorder:
             'duration': speed
         }
         self.actions.append(action)
-        print(f"录制视角控制: {direction} ({self.current_view_mode}模式), 时间戳: {timestamp:.3f}s")
+        print(f"录制视角控制: {direction} ({self.current_view_mode}模式), 距离: {distance}px, 时间戳: {timestamp:.3f}s")
         
     def set_view_mode(self, mode: str):
         """设置视角控制模式"""
@@ -339,16 +341,35 @@ class ActionRecorder:
                 return False
             
             print(f"开始回放PC端录制动作，共 {len(pc_actions)} 个")
-            start_time = time.time()
+            
+            # 使用ADB录制的时间基准，而不是重新设置时间基准
+            if not self.start_time:
+                print("警告: ADB录制尚未开始，无法确定时间基准")
+                return False
+                
+            # 计算PC回放开始时相对于ADB录制开始的时间偏移
+            pc_replay_start_time = time.time()
+            time_offset = pc_replay_start_time - self.start_time
+            
+            print(f"ADB录制开始时间: {self.start_time}")
+            print(f"PC回放开始时间: {pc_replay_start_time}")
+            print(f"时间偏移: {time_offset:.3f}秒")
             
             # 为每个动作创建独立的延迟执行线程，避免累积延迟
             def schedule_action(action):
                 """为单个动作安排执行时间"""
-                target_time = action.get('timestamp', 0)
+                original_timestamp = action.get('timestamp', 0)
+                # 调整时间戳：PC动作的原始时间戳 + 时间偏移
+                adjusted_timestamp = original_timestamp + time_offset
                 
                 def execute_delayed():
-                    # 等待到指定时间点（相对于回放开始时间）
-                    delay = target_time
+                    # 计算动作应该执行的绝对时间（基于ADB录制开始时间）
+                    target_absolute_time = self.start_time + adjusted_timestamp
+                    
+                    # 等待到指定的绝对时间点
+                    current_time = time.time()
+                    delay = target_absolute_time - current_time
+                    
                     if delay > 0:
                         time.sleep(delay)
                     
@@ -359,12 +380,21 @@ class ActionRecorder:
                 # 启动独立的执行线程
                 thread = threading.Thread(target=execute_delayed, daemon=True)
                 thread.start()
+                
+                # 更新存储的PC动作时间戳（用于后续合并）
+                for stored_action in self.pc_replay_actions:
+                    if stored_action is action:
+                        stored_action['timestamp'] = adjusted_timestamp
+                        stored_action['original_timestamp'] = original_timestamp
+                        stored_action['time_offset'] = time_offset
+                        break
             
             # 为所有动作安排执行
             for action in pc_actions:
                 schedule_action(action)
             
-            print("PC端动作回放已安排完成，所有动作将按时间戳并发执行")
+            print("PC端动作回放已安排完成，所有动作将按调整后的时间戳并发执行")
+            print(f"PC动作时间戳已调整，增加偏移: +{time_offset:.3f}秒")
             return True
             
         except Exception as e:
@@ -386,7 +416,7 @@ class ActionRecorder:
                 # 判断是否为长按操作（基于按键和持续时间）
                 if key in ['a', 'd'] and duration > 100:  # A/D键且持续时间>100ms认为是长按
                     # 长按操作增加150ms补偿
-                    compensated_duration = duration + 150
+                    compensated_duration = duration + self.long_press_compensation
                     print(f"回放PC长按: {position}, 原时长: {duration}ms, 补偿后: {compensated_duration}ms")
                     
                     # 使用一次性长按命令
@@ -403,7 +433,7 @@ class ActionRecorder:
             elif action_type == 'long_press' and position:
                 # 长按操作增加150ms补偿
                 duration = action.get('duration', 500)
-                compensated_duration = duration + 150
+                compensated_duration = duration + self.long_press_compensation
                 print(f"回放长按: {position}, 原时长: {duration}ms, 补偿后: {compensated_duration}ms")
                 
                 # 使用一次性长按命令
@@ -530,3 +560,12 @@ class ActionRecorder:
         except Exception as e:
             print(f"分割长按动作失败: {str(e)}")
             return pc_actions  # 出错时返回原始PC动作 
+
+    def set_long_press_compensation(self, compensation_ms: int):
+        """设置长按补偿时间"""
+        self.long_press_compensation = compensation_ms
+        print(f"录制器长按补偿时间已设置为: {compensation_ms}ms")
+        
+    def get_long_press_compensation(self):
+        """获取当前长按补偿时间"""
+        return self.long_press_compensation 

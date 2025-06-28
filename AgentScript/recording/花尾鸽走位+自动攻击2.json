@@ -1,0 +1,1706 @@
+{
+  "device_id": "Y57XRWSS8PH6W84L",
+  "pc_replay_file": "D:/my_pro/GitHub/modern-warship-market/AgentScript/recording/花尾鸽走位一步到位.json",
+  "total_duration": 82.00505876541138,
+  "total_actions": 136,
+  "adb_actions_count": 127,
+  "pc_actions_count": 9,
+  "created_time": "2025-06-28T17:13:26.903046",
+  "auto_merged": true,
+  "actions": [
+    {
+      "type": "tap",
+      "key": "w",
+      "position": [
+        442,
+        702
+      ],
+      "timestamp": 14.777017593383789,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 1.0966076850891113,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "w",
+      "position": [
+        442,
+        702
+      ],
+      "timestamp": 14.925999879837036,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 1.2455899715423584,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_left",
+      "mode": "fast",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        980,
+        720
+      ],
+      "timestamp": 15.749172449111938,
+      "duration": 100,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_left",
+      "mode": "fast",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        980,
+        720
+      ],
+      "timestamp": 15.978543281555176,
+      "duration": 100,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 19.71441888809204,
+      "duration": 2732,
+      "executed": true,
+      "original_timestamp": 6.034008979797363,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 24.637964487075806,
+      "duration": 553,
+      "executed": true,
+      "original_timestamp": 10.957554578781128,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 26.317622661590576,
+      "duration": 599,
+      "executed": true,
+      "original_timestamp": 12.637212753295898,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 27.853527784347534,
+      "duration": 2427,
+      "executed": true,
+      "original_timestamp": 14.173117876052856,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "d",
+      "position": [
+        680,
+        813
+      ],
+      "timestamp": 28.404967784881592,
+      "duration": 3690,
+      "executed": true,
+      "original_timestamp": 14.724557876586914,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 36.12355446815491,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 36.83103394508362,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 37.14848732948303,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 37.429816246032715,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 37.84505033493042,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 38.67041826248169,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 38.984233379364014,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 39.53820252418518,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 40.16649389266968,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 40.605302572250366,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 40.72831749916077,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 41.02071285247803,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 41.257705211639404,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 41.497406244277954,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 42.007418394088745,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 42.188897371292114,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 42.35357117652893,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 42.488027572631836,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 42.63660287857056,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 42.77550148963928,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 42.907432079315186,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 43.04711556434631,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 43.17738199234009,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 43.626811027526855,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 44.18062210083008,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 44.55862307548523,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.02729797363281,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.19495725631714,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.34597110748291,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.481770038604736,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.620768785476685,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.77876830101013,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 45.921366930007935,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 46.057169675827026,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 46.18920278549194,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 46.355547189712524,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "s",
+      "position": [
+        442,
+        917
+      ],
+      "timestamp": 46.57791304588318,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 32.8975031375885,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 46.72052764892578,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 46.90462017059326,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 47.01925587654114,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 47.19774508476257,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 47.30599045753479,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "s",
+      "position": [
+        442,
+        917
+      ],
+      "timestamp": 47.630887269973755,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 33.95047736167908,
+      "time_offset": 13.680409908294678,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 47.881465435028076,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 48.079025983810425,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 48.27145481109619,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 48.42750573158264,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 48.597301959991455,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 48.884543895721436,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 49.122084617614746,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 49.32978916168213,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 49.582841873168945,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 49.78990817070007,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 49.996741771698,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 50.185741662979126,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 50.42138671875,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 50.67748785018921,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 50.895724296569824,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 51.063628911972046,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 51.89401388168335,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 52.045002937316895,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 52.319010496139526,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 52.498647689819336,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 52.6876494884491,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 53.0136821269989,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 53.19852590560913,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 53.38498878479004,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 53.56499171257019,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 53.75198698043823,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 55.532463788986206,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 55.93810248374939,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 56.15619492530823,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 56.39341163635254,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 56.548420667648315,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 56.86241579055786,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 57.066033124923706,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 57.20729899406433,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 57.364128828048706,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 58.02640724182129,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 58.38440656661987,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 58.56595969200134,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 58.732922315597534,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_left",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1130,
+        720
+      ],
+      "timestamp": 60.28109288215637,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 60.41709113121033,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 60.61309337615967,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 60.8217511177063,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 60.96638083457947,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 61.12384223937988,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 61.26842260360718,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 61.41674065589905,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 61.56473398208618,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 61.729856729507446,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 62.212480783462524,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 62.431148052215576,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 62.482115268707275,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_up",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1280,
+        570
+      ],
+      "timestamp": 63.04699349403381,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 63.59845733642578,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 63.80402088165283,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 64.04143166542053,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 64.25828433036804,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 64.5924596786499,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 64.81368446350098,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "view_control",
+      "direction": "view_right",
+      "mode": "slow",
+      "start_position": [
+        1280,
+        720
+      ],
+      "end_position": [
+        1430,
+        720
+      ],
+      "timestamp": 65.68663263320923,
+      "duration": 200,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 65.92282629013062,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 66.14633083343506,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 66.33662104606628,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 66.48962736129761,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 66.7045693397522,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 67.00840950012207,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 67.20922517776489,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 67.61985278129578,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 67.80758118629456,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 67.95796751976013,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 68.11386322975159,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 68.2519588470459,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 68.42109036445618,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 69.71541738510132,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 70.0302619934082,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 70.21426057815552,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 70.39526057243347,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 70.55826711654663,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 71.32284903526306,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "timestamp": 71.60917520523071,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 71.99470543861389,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 72.18632674217224,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 72.3787157535553,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 72.53151202201843,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    }
+  ]
+}

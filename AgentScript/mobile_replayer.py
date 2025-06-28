@@ -17,7 +17,7 @@ class MobileReplayer:
         self.replaying = False
         self.replay_thread = None
         self.device_id = ""
-        self.long_press_compensation = 150  # 长按补偿时间(ms)
+        self.long_press_compensation = 150  # 长按补偿时间(ms)，可通过配置修改
         self.start_timing_calibration = 0.2  # 开局起手时间校准(秒)，默认0.2秒
         
     def get_available_devices(self):
@@ -38,7 +38,7 @@ class MobileReplayer:
         """设置开局起手时间校准"""
         self.start_timing_calibration = calibration_seconds
         print(f"开局起手时间校准已设置为: {calibration_seconds}秒")
-        
+    
     def load_and_replay(self, recording_file: str):
         """加载并回放录制文件"""
         try:
@@ -167,10 +167,16 @@ class MobileReplayer:
         """为单个动作安排执行时间，返回线程对象"""
         def execute_action():
             try:
-                # 等待到指定时间点
-                target_time = action.get('timestamp', 0)
-                if target_time > 0:
-                    time.sleep(target_time)
+                # 计算动作应该执行的绝对时间
+                target_timestamp = action.get('timestamp', 0)
+                target_absolute_time = start_time + target_timestamp
+                
+                # 等待到指定的绝对时间点
+                current_time = time.time()
+                delay = target_absolute_time - current_time
+                
+                if delay > 0:
+                    time.sleep(delay)
                 
                 if not self.replaying:
                     return
@@ -202,14 +208,17 @@ class MobileReplayer:
                 duration = action.get('duration', 50)
                 
                 if position:
-                    # 判断是否为长按操作
-                    if duration > 100:  # 持续时间>100ms认为是长按
-                        # 长按操作增加补偿
+                    # 使用与录制时完全相同的长按判断逻辑
+                    if key in ['a', 'd'] and duration > 100:  # 只有A/D键且持续时间>100ms才认为是长按
+                        # 长按操作增加配置的补偿时间
                         compensated_duration = duration + self.long_press_compensation
-                        self._execute_long_press(position, compensated_duration)
+                        # 使用与录制时相同的ADB命令执行方式
+                        x, y = position
+                        cmd = f"adb -s {self.device_id} shell input swipe {x} {y} {x} {y} {compensated_duration}"
+                        subprocess.run(cmd, shell=True, capture_output=True, timeout=max(2, compensated_duration/1000 + 1))
                         print(f"执行长按: {action_info} -> {position}, 原时长: {duration}ms, 补偿后: {compensated_duration}ms")
                     else:
-                        # 普通点击
+                        # 普通点击（与录制时一致）
                         ADBHelper.touch(self.device_id, position)
                         print(f"执行点击: {action_info} -> {position}")
                 
@@ -219,9 +228,12 @@ class MobileReplayer:
                 duration = action.get('duration', 500)
                 
                 if position:
-                    # 长按操作增加补偿
+                    # 长按操作增加配置的补偿时间
                     compensated_duration = duration + self.long_press_compensation
-                    self._execute_long_press(position, compensated_duration)
+                    # 使用与录制时相同的ADB命令执行方式
+                    x, y = position
+                    cmd = f"adb -s {self.device_id} shell input swipe {x} {y} {x} {y} {compensated_duration}"
+                    subprocess.run(cmd, shell=True, capture_output=True, timeout=max(2, compensated_duration/1000 + 1))
                     print(f"执行长按: {action_info} -> {position}, 原时长: {duration}ms, 补偿后: {compensated_duration}ms")
                 
             elif action_type == 'long_press_start':
@@ -255,18 +267,6 @@ class MobileReplayer:
         except Exception as e:
             print(f"执行动作出错: {str(e)}, 动作: {action}")
     
-    def _execute_long_press(self, position, duration):
-        """执行长按操作"""
-        try:
-            x, y = position
-            # 使用swipe命令模拟长按，起点和终点相同
-            cmd = f"adb -s {self.device_id} shell input swipe {x} {y} {x} {y} {duration}"
-            subprocess.run(cmd, shell=True, capture_output=True, timeout=max(2, duration/1000 + 1))
-            return True
-        except Exception as e:
-            print(f"长按执行失败: {str(e)}")
-            return False
-    
     def stop_replay(self):
         """停止回放"""
         self.replaying = False
@@ -295,7 +295,7 @@ def main():
     replayer = MobileReplayer()
     
     console.print("[bold blue]手机端回放器[/bold blue]")
-    console.print(f"[yellow]长按补偿: +{replayer.long_press_compensation}ms[/yellow]")
+    console.print(f"[yellow]长按补偿: {replayer.long_press_compensation}ms (可通过c+数字修改)[/yellow]")
     console.print(f"[yellow]开局起手时间校准: {replayer.start_timing_calibration}秒[/yellow]")
     
     # 设置默认目录
@@ -431,7 +431,7 @@ def main():
                     
                     console.print(f"[green]选择文件: {filename}[/green]")
                     console.print(f"[green]目标设备: {replayer.device_id}[/green]")
-                    console.print(f"[yellow]长按补偿: +{replayer.long_press_compensation}ms[/yellow]")
+                    console.print(f"[yellow]长按补偿: {replayer.long_press_compensation}ms (可通过c+数字修改)[/yellow]")
                     console.print(f"[yellow]开局起手时间校准: {replayer.start_timing_calibration}秒[/yellow]")
                     
                     confirm = input("确认开始回放? (y/n): ").strip().lower()

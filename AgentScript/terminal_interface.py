@@ -591,6 +591,8 @@ class TerminalInterface:
             try:
                 compensation = int(choice[1:])
                 if 0 <= compensation <= 1000:
+                    # 同时设置录制器和PC回放器的长按补偿
+                    self.recorder.set_long_press_compensation(compensation)
                     self.pc_replayer.set_long_press_compensation(compensation)
                     self.console.print(f"[green]长按补偿已设置为: {compensation}ms[/green]")
                 else:
@@ -697,6 +699,8 @@ class TerminalInterface:
             try:
                 compensation = int(choice[1:])
                 if 0 <= compensation <= 1000:
+                    # 同时设置录制器和PC回放器的长按补偿
+                    self.recorder.set_long_press_compensation(compensation)
                     self.mobile_replayer.set_long_press_compensation(compensation)
                     self.console.print(f"[green]长按补偿已设置为: {compensation}ms[/green]")
                 else:

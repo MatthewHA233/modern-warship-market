@@ -26,7 +26,8 @@ SPECIAL_CONTROLS = {
 VIEW_CONTROL = {
     'slow_speed': 200,      # 慢速视角移动速度(毫秒)
     'fast_speed': 100,      # 快速视角移动速度(毫秒)
-    'swipe_distance': 300   # 滑动距离(像素)
+    'swipe_distance': 300,  # 快速模式滑动距离(像素)
+    'slow_swipe_distance': 150  # 慢速模式滑动距离(像素) - 更小的滑动幅度
 }
 
 # 按键映射

@@ -795,7 +795,7 @@ class MainWindow(QMainWindow):
                 
             # 选择录制文件
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "选择录制文件", "./recording", "JSON files (*.json)"
+                self, "选择录制文件", "./AgentScript/recording", "JSON files (*.json)"
             )
             
             if not file_path:
@@ -837,7 +837,7 @@ class MainWindow(QMainWindow):
                 
             # 选择录制文件
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "选择录制文件", "./recording", "JSON文件 (*.json)"
+                self, "选择录制文件", "./AgentScript/recording", "JSON文件 (*.json)"
             )
             
             if not file_path:
@@ -896,6 +896,9 @@ class MainWindow(QMainWindow):
     def update_compensation(self):
         """更新长按补偿时间"""
         compensation = self.compensation_spinbox.value()
+        # 更新录制器的长按补偿
+        self.action_recorder.set_long_press_compensation(compensation)
+        # 更新回放器的长按补偿
         self.mobile_replayer.set_long_press_compensation(compensation)
         self.status_bar.showMessage(f"长按补偿已设置为: {compensation}ms")
 
