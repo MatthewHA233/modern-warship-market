@@ -559,21 +559,35 @@ class AutoBattleWorker(QThread):
                             
                             # 计算每小时收益
                             if self.start_time:
+                                # 计算平均战斗时间（无论是否有循环数据都需要计算）
+                                avg_battle_time = self.total_battle_time / self.battle_count if self.battle_count > 0 else 0
+                                
                                 # 使用CSV数据中的单次循环时长之和来计算每小时收益
                                 total_cycle_hours = self.get_total_cycle_time_hours()
                                 if total_cycle_hours > 0:
                                     dollar_per_hour = int(self.total_dollar / total_cycle_hours)
                                     gold_per_hour = int(self.total_gold / total_cycle_hours)
                                     battles_per_hour = self.battle_count / total_cycle_hours
-                                    avg_battle_time = self.total_battle_time / self.battle_count if self.battle_count > 0 else 0
                                     
                                     self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
                                     self.log_message.emit("每小时收益: 美元%d, 黄金%d, 战斗%.1f场 (基于循环时长%.1f小时)" % (dollar_per_hour, gold_per_hour, battles_per_hour, total_cycle_hours))
                                     self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
                                 else:
-                                    self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
-                                    self.log_message.emit("暂无有效循环时长数据，无法计算每小时收益")
-                                    self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time if self.battle_count > 0 else 0, cycle_duration_minutes))
+                                    # 没有有效循环数据时，使用当前单次循环数据来估算每小时收益
+                                    if cycle_duration_minutes > 0:
+                                        # 基于当前单次循环时间估算每小时收益
+                                        cycle_hours = cycle_duration_minutes / 60
+                                        dollar_per_hour_estimate = int((self.total_dollar / self.battle_count) / cycle_hours) if self.battle_count > 0 else 0
+                                        gold_per_hour_estimate = int((self.total_gold / self.battle_count) / cycle_hours) if self.battle_count > 0 else 0
+                                        battles_per_hour_estimate = 1 / cycle_hours
+                                        
+                                        self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
+                                        self.log_message.emit("每小时收益估算: 美元%d, 黄金%d, 战斗%.1f场 (基于本次循环%.1f分钟)" % (dollar_per_hour_estimate, gold_per_hour_estimate, battles_per_hour_estimate, cycle_duration_minutes))
+                                        self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
+                                    else:
+                                        self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
+                                        self.log_message.emit("暂无有效循环时长数据，无法计算每小时收益")
+                                        self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
                             
                             # 发送战斗完成信号
                             battle_info = rewards.copy()
