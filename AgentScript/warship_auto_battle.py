@@ -829,6 +829,35 @@ class AutoBattleWorker(QThread):
             self.log_message.emit("计算总循环时间失败: %s" % str(e))
             return 0
     
+    def get_average_cycle_time_minutes(self):
+        """从CSV文件计算平均循环时间（分钟）"""
+        try:
+            if not os.path.exists(self.stats_file):
+                return 0
+            
+            import csv
+            total_cycle_minutes = 0
+            cycle_count = 0
+            
+            with open(self.stats_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for record in reader:
+                    cycle_time_str = record.get("单次循环时长(分钟)", "0")
+                    try:
+                        cycle_time = float(cycle_time_str) if cycle_time_str else 0
+                        if cycle_time > 0:  # 只计算有效的循环时间
+                            total_cycle_minutes += cycle_time
+                            cycle_count += 1
+                    except ValueError:
+                        pass  # 忽略无效的循环时间数据
+            
+            # 计算平均值
+            return total_cycle_minutes / cycle_count if cycle_count > 0 else 0
+            
+        except Exception as e:
+            self.log_message.emit("计算平均循环时间失败: %s" % str(e))
+            return 0
+    
     def reset_stats(self):
         """重置统计数据"""
         self.battle_count = 0
@@ -1032,8 +1061,25 @@ class MainWindow(QMainWindow):
         self.total_gold_label = QLabel("0")
         stats_row.addWidget(self.total_gold_label)
         
+        stats_row.addWidget(QLabel("估计总肝池抽数:"))
+        self.total_liver_pool_label = QLabel("0")
+        stats_row.addWidget(self.total_liver_pool_label)
+        
         stats_row.addStretch()
         status_layout.addLayout(stats_row)
+        
+        # 时间统计行
+        time_stats_row = QHBoxLayout()
+        time_stats_row.addWidget(QLabel("累计战斗时间:"))
+        self.total_battle_time_label = QLabel("0分钟")
+        time_stats_row.addWidget(self.total_battle_time_label)
+        
+        time_stats_row.addWidget(QLabel("累计循环时间:"))
+        self.total_cycle_time_label = QLabel("0分钟")
+        time_stats_row.addWidget(self.total_cycle_time_label)
+        
+        time_stats_row.addStretch()
+        status_layout.addLayout(time_stats_row)
         
         # 收益率行
         earnings_row = QHBoxLayout()
@@ -1044,6 +1090,10 @@ class MainWindow(QMainWindow):
         earnings_row.addWidget(QLabel("黄金/小时:"))
         self.gold_per_hour_label = QLabel("0")
         earnings_row.addWidget(self.gold_per_hour_label)
+        
+        earnings_row.addWidget(QLabel("肝池抽数/小时:"))
+        self.liver_pool_per_hour_label = QLabel("0")
+        earnings_row.addWidget(self.liver_pool_per_hour_label)
         
         earnings_row.addWidget(QLabel("平均战斗时间:"))
         self.avg_battle_time_label = QLabel("0分钟")
@@ -1061,6 +1111,10 @@ class MainWindow(QMainWindow):
         cycle_row.addWidget(QLabel("当前循环用时:"))
         self.current_cycle_time_label = QLabel("0:00")
         cycle_row.addWidget(self.current_cycle_time_label)
+        
+        cycle_row.addWidget(QLabel("平均循环用时:"))
+        self.avg_cycle_time_label = QLabel("0分钟")
+        cycle_row.addWidget(self.avg_cycle_time_label)
         
         cycle_row.addStretch()
         status_layout.addLayout(cycle_row)
@@ -1307,6 +1361,31 @@ class MainWindow(QMainWindow):
         self.total_dollar_label.setText("{:,}".format(stats['total_dollar']))
         self.total_gold_label.setText("{:,}".format(stats['total_gold']))
         
+        # 计算并显示估计总肝池抽数
+        estimated_liver_pool = stats["battle_count"] / 2.0  # 每2场战斗约等于1次肝池抽取
+        self.total_liver_pool_label.setText("{:.1f}".format(estimated_liver_pool))
+        
+        # 显示累计战斗时间
+        if hasattr(self.worker, 'total_battle_time') and self.worker:
+            total_battle_hours = self.worker.total_battle_time / 60.0  # 转换为小时
+            if total_battle_hours >= 1:
+                self.total_battle_time_label.setText("{:.1f}小时".format(total_battle_hours))
+            else:
+                self.total_battle_time_label.setText("{:.1f}分钟".format(self.worker.total_battle_time))
+        else:
+            self.total_battle_time_label.setText("0分钟")
+        
+        # 显示累计循环时间
+        if hasattr(self.worker, 'get_total_cycle_time_hours'):
+            total_cycle_hours = self.worker.get_total_cycle_time_hours()
+            if total_cycle_hours >= 1:
+                self.total_cycle_time_label.setText("{:.1f}小时".format(total_cycle_hours))
+            else:
+                total_cycle_minutes = total_cycle_hours * 60
+                self.total_cycle_time_label.setText("{:.1f}分钟".format(total_cycle_minutes))
+        else:
+            self.total_cycle_time_label.setText("0分钟")
+        
         # 计算每小时收益和平均战斗时间
         if hasattr(self.worker, 'get_total_cycle_time_hours'):
             # 使用CSV数据中的单次循环时长之和来计算每小时收益
@@ -1314,15 +1393,21 @@ class MainWindow(QMainWindow):
             if total_cycle_hours > 0:
                 dollar_per_hour = int(stats["total_dollar"] / total_cycle_hours)
                 gold_per_hour = int(stats["total_gold"] / total_cycle_hours)
+                cycles_per_hour = stats["battle_count"] / total_cycle_hours
+                liver_pool_per_hour = cycles_per_hour / 2.0  # 每小时肝池抽数 = 每小时循环数 / 2
+                
                 self.dollar_per_hour_label.setText("{:,}".format(dollar_per_hour))
                 self.gold_per_hour_label.setText("{:,}".format(gold_per_hour))
+                self.liver_pool_per_hour_label.setText("{:.1f}".format(liver_pool_per_hour))
             else:
                 self.dollar_per_hour_label.setText("0")
                 self.gold_per_hour_label.setText("0")
+                self.liver_pool_per_hour_label.setText("0")
         else:
             # 如果worker不存在或没有相应方法，显示0
             self.dollar_per_hour_label.setText("0")
             self.gold_per_hour_label.setText("0")
+            self.liver_pool_per_hour_label.setText("0")
         
         # 显示平均战斗时间
         if stats["battle_count"] > 0 and hasattr(self.worker, 'total_battle_time'):
@@ -1330,6 +1415,16 @@ class MainWindow(QMainWindow):
             self.avg_battle_time_label.setText("%.1f分钟" % avg_time)
         else:
             self.avg_battle_time_label.setText("0分钟")
+        
+        # 显示平均循环用时
+        if hasattr(self.worker, 'get_average_cycle_time_minutes'):
+            avg_cycle_time = self.worker.get_average_cycle_time_minutes()
+            if avg_cycle_time > 0:
+                self.avg_cycle_time_label.setText("%.1f分钟" % avg_cycle_time)
+            else:
+                self.avg_cycle_time_label.setText("0分钟")
+        else:
+            self.avg_cycle_time_label.setText("0分钟")
         
         # 更新当前循环用时
         if hasattr(self.worker, 'cycle_start_time') and self.worker and self.worker.cycle_start_time:
@@ -1340,7 +1435,7 @@ class MainWindow(QMainWindow):
         else:
             self.current_cycle_time_label.setText("0:00")
         
-        self.log_message("统计更新 - 战斗: %d场, 美元: %s, 黄金: %s" % (stats['battle_count'], "{:,}".format(stats['total_dollar']), "{:,}".format(stats['total_gold'])))
+        self.log_message("统计更新 - 战斗: %d场, 美元: %s, 黄金: %s, 估计肝池抽数: %.1f" % (stats['battle_count'], "{:,}".format(stats['total_dollar']), "{:,}".format(stats['total_gold']), estimated_liver_pool))
     
     def handle_rewards(self, rewards):
         """处理奖励"""
