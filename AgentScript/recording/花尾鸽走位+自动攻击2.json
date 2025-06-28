@@ -1,8 +1,8 @@
 {
   "device_id": "Y57XRWSS8PH6W84L",
   "pc_replay_file": "D:/my_pro/GitHub/modern-warship-market/AgentScript/recording/花尾鸽走位一步到位.json",
-  "total_duration": 82.00505876541138,
-  "total_actions": 136,
+  "total_duration": 72.53151202201843,
+  "total_actions": 138,
   "adb_actions_count": 127,
   "pc_actions_count": 9,
   "created_time": "2025-06-28T17:13:26.903046",
@@ -137,6 +137,28 @@
       "original_timestamp": 14.724557876586914,
       "time_offset": 13.680409908294678,
       "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "duration": 50,
+      "timestamp": 35,
+      "source": "manual_edit"
+    },
+    {
+      "type": "tap",
+      "key": "1",
+      "position": [
+        2049,
+        717
+      ],
+      "duration": 50,
+      "timestamp": 36,
+      "source": "manual_edit"
     },
     {
       "type": "view_control",
@@ -1702,5 +1724,7 @@
       "executed": true,
       "source": "adb"
     }
-  ]
+  ],
+  "manually_edited": true,
+  "edit_time": "2025-06-28T17:50:35.391728"
 }

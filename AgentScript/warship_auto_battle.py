@@ -479,158 +479,68 @@ class AutoBattleWorker(QThread):
             
             # 加载并开始回放
             if self.replayer.load_and_replay(self.replay_file):
-                self.log_message.emit("回放已开始，停止状态检测...")
+                self.log_message.emit("回放已开始，40秒后将开始穿插检测结算界面...")
                 
-                # 等待回放真正完成
+                # 记录回放开始时间
+                replay_start_time = datetime.now()
+                result_detected_early = False
+                
+                # 等待回放完成，同时在40秒后开始穿插检测结算界面
                 while self.replayer.is_replaying() and self.running:
                     time.sleep(0.5)  # 每0.5秒检查一次回放状态
+                    
+                    # 计算回放已进行的时间
+                    elapsed_time = (datetime.now() - replay_start_time).total_seconds()
+                    
+                    # 如果回放已进行40秒，开始穿插检测结算界面
+                    if elapsed_time >= 40:
+                        if self.matcher.check_battle_result_screen():
+                            result_detected_early = True
+                            self.log_message.emit("回放进行中检测到结算画面，强制停止回放")
+                            # 强制停止回放
+                            self.replayer.stop_replay()
+                            break
                 
                 if self.running:  # 确保不是因为手动停止而退出
-                    self.log_message.emit("回放完成，等待结算画面...")
-                    
-                    # 等待并检测结算画面，最多等待400秒
-                    result_detected = False
-                    check_attempts = 0
-                    max_attempts = 400  # 最多检查400次，每次间隔1秒
-                    
-                    while check_attempts < max_attempts and self.running:
-                        time.sleep(1)  # 每秒检查一次
-                        check_attempts += 1
-                        
-                        if self.matcher.check_battle_result_screen():
-                            result_detected = True
-                            self.log_message.emit("检测到结算画面，开始识别奖励")
-                            break
-                        
-                        self.log_message.emit("等待结算画面... (%d/%d)" % (check_attempts, max_attempts))
-                    
-                    if not result_detected:
-                        self.log_message.emit("未检测到结算画面，跳过奖励识别")
-                        self.log_message.emit("发送返回键")
-                        self.send_back_key()
+                    if result_detected_early:
+                        self.log_message.emit("提前检测到结算画面，开始识别奖励")
+                        # 等待2秒确保界面稳定
                         time.sleep(2)
-                        
-                        # 清理cache文件夹
-                        self.cleanup_cache_files()
+                        # 直接跳转到奖励识别流程
+                        self.process_battle_rewards()
                     else:
-                        # 检测到结算画面后再等待2秒确保界面稳定
-                        time.sleep(2)
+                        self.log_message.emit("回放完成，等待结算画面...")
                         
-                        # 识别奖励
-                        rewards = self.matcher.recognize_battle_rewards()
-                        if rewards:
-                            # 计算战斗时间
-                            battle_end_time = datetime.now()
-                            if self.current_battle_start_time:
-                                battle_duration = (battle_end_time - self.current_battle_start_time).total_seconds()
-                                battle_duration_minutes = battle_duration / 60
-                                self.total_battle_time += battle_duration_minutes
-                                
-                                self.log_message.emit("战斗时间: %.1f分钟 (%.0f秒)" % (battle_duration_minutes, battle_duration))
-                            else:
-                                battle_duration = 0
-                                battle_duration_minutes = 0
+                        # 等待并检测结算画面，最多等待400秒
+                        result_detected = False
+                        check_attempts = 0
+                        max_attempts = 400  # 最多检查400次，每次间隔1秒
+                        
+                        while check_attempts < max_attempts and self.running:
+                            time.sleep(1)  # 每秒检查一次
+                            check_attempts += 1
                             
-                            self.log_message.emit("成功识别战斗奖励")
-                            total_dollar = rewards["dollar_base"] + rewards["dollar_extra"]
-                            total_gold = rewards["gold_base"] + rewards["gold_extra"]
-                            vip_status = "有VIP" if rewards["has_vip"] else "无VIP"
+                            if self.matcher.check_battle_result_screen():
+                                result_detected = True
+                                self.log_message.emit("检测到结算画面，开始识别奖励")
+                                break
                             
-                            self.log_message.emit("VIP状态: %s" % vip_status)
-                            self.log_message.emit("美元奖励: 基础%d + 额外%d = %d" % (rewards["dollar_base"], rewards["dollar_extra"], total_dollar))
-                            self.log_message.emit("黄金奖励: 基础%d + 额外%d = %d" % (rewards["gold_base"], rewards["gold_extra"], total_gold))
+                            self.log_message.emit("等待结算画面... (%d/%d)" % (check_attempts, max_attempts))
+                        
+                        if not result_detected:
+                            self.log_message.emit("未检测到结算画面，跳过奖励识别")
+                            self.log_message.emit("发送返回键")
+                            self.send_back_key()
+                            time.sleep(2)
                             
-                            # 更新统计数据
-                            self.battle_count += 1
-                            self.total_dollar += total_dollar
-                            self.total_gold += total_gold
-                            
-                            # 计算单次循环时长（在战斗计数器+1时）
-                            if self.cycle_start_time:
-                                cycle_end_time = datetime.now()
-                                cycle_duration = (cycle_end_time - self.cycle_start_time).total_seconds()
-                                cycle_duration_minutes = cycle_duration / 60
-                                self.log_message.emit("单次循环时长: %.1f分钟 (%.0f秒)" % (cycle_duration_minutes, cycle_duration))
-                                # 重置单次循环计时器，为下一次循环做准备
-                                self.cycle_start_time = cycle_end_time
-                            else:
-                                cycle_duration = 0
-                                cycle_duration_minutes = 0
-                            
-                            # 计算每小时收益
-                            if self.start_time:
-                                # 计算平均战斗时间（无论是否有循环数据都需要计算）
-                                avg_battle_time = self.total_battle_time / self.battle_count if self.battle_count > 0 else 0
-                                
-                                # 使用CSV数据中的单次循环时长之和来计算每小时收益
-                                total_cycle_hours = self.get_total_cycle_time_hours()
-                                if total_cycle_hours > 0:
-                                    dollar_per_hour = int(self.total_dollar / total_cycle_hours)
-                                    gold_per_hour = int(self.total_gold / total_cycle_hours)
-                                    battles_per_hour = self.battle_count / total_cycle_hours
-                                    
-                                    self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
-                                    self.log_message.emit("每小时收益: 美元%d, 黄金%d, 战斗%.1f场 (基于循环时长%.1f小时)" % (dollar_per_hour, gold_per_hour, battles_per_hour, total_cycle_hours))
-                                    self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
-                                else:
-                                    # 没有有效循环数据时，使用当前单次循环数据来估算每小时收益
-                                    if cycle_duration_minutes > 0:
-                                        # 基于当前单次循环时间估算每小时收益
-                                        cycle_hours = cycle_duration_minutes / 60
-                                        dollar_per_hour_estimate = int((self.total_dollar / self.battle_count) / cycle_hours) if self.battle_count > 0 else 0
-                                        gold_per_hour_estimate = int((self.total_gold / self.battle_count) / cycle_hours) if self.battle_count > 0 else 0
-                                        battles_per_hour_estimate = 1 / cycle_hours
-                                        
-                                        self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
-                                        self.log_message.emit("每小时收益估算: 美元%d, 黄金%d, 战斗%.1f场 (基于本次循环%.1f分钟)" % (dollar_per_hour_estimate, gold_per_hour_estimate, battles_per_hour_estimate, cycle_duration_minutes))
-                                        self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
-                                    else:
-                                        self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
-                                        self.log_message.emit("暂无有效循环时长数据，无法计算每小时收益")
-                                        self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
-                            
-                            # 发送战斗完成信号
-                            battle_info = rewards.copy()
-                            battle_info['battle_duration_minutes'] = battle_duration_minutes
-                            battle_info['battle_duration_seconds'] = battle_duration
-                            battle_info['cycle_duration_minutes'] = cycle_duration_minutes
-                            battle_info['cycle_duration_seconds'] = cycle_duration
-                            self.battle_completed.emit(battle_info)
-                            
-                            # 保存统计数据
-                            battle_data = {
-                                'rewards': rewards,
-                                'battle_duration_minutes': battle_duration_minutes,
-                                'battle_duration_seconds': battle_duration,
-                                'cycle_duration_minutes': cycle_duration_minutes,
-                                'cycle_duration_seconds': cycle_duration
-                            }
-                            self.save_stats(battle_data)
-                            
-                            # 发送统计更新信号
-                            stats = {
-                                "battle_count": self.battle_count,
-                                "total_dollar": self.total_dollar,
-                                "total_gold": self.total_gold
-                            }
-                            self.stats_updated.emit(stats)
+                            # 清理cache文件夹
+                            self.cleanup_cache_files()
                         else:
-                            # 计算战斗时间（即使奖励识别失败）
-                            if self.current_battle_start_time:
-                                battle_end_time = datetime.now()
-                                battle_duration = (battle_end_time - self.current_battle_start_time).total_seconds()
-                                battle_duration_minutes = battle_duration / 60
-                                self.total_battle_time += battle_duration_minutes
-                                self.log_message.emit("识别奖励失败，但战斗时间: %.1f分钟 (%.0f秒)" % (battle_duration_minutes, battle_duration))
+                            # 检测到结算画面后再等待2秒确保界面稳定
+                            time.sleep(2)
                             
-                            self.log_message.emit("识别奖励失败")
-                        
-                        self.log_message.emit("发送返回键")
-                        self.send_back_key()
-                        time.sleep(2)
-                        
-                        # 清理cache文件夹
-                        self.cleanup_cache_files()
+                            # 处理战斗奖励
+                            self.process_battle_rewards()
                 else:
                     self.log_message.emit("回放被手动停止")
             else:
@@ -643,6 +553,124 @@ class AutoBattleWorker(QThread):
         else:
             self.log_message.emit("未找到回放文件或文件无效")
             time.sleep(2)
+    
+    def process_battle_rewards(self):
+        """处理战斗奖励的统一方法"""
+        # 识别奖励
+        rewards = self.matcher.recognize_battle_rewards()
+        if rewards:
+            # 计算战斗时间
+            battle_end_time = datetime.now()
+            if self.current_battle_start_time:
+                battle_duration = (battle_end_time - self.current_battle_start_time).total_seconds()
+                battle_duration_minutes = battle_duration / 60
+                self.total_battle_time += battle_duration_minutes
+                
+                self.log_message.emit("战斗时间: %.1f分钟 (%.0f秒)" % (battle_duration_minutes, battle_duration))
+            else:
+                battle_duration = 0
+                battle_duration_minutes = 0
+            
+            self.log_message.emit("成功识别战斗奖励")
+            total_dollar = rewards["dollar_base"] + rewards["dollar_extra"]
+            total_gold = rewards["gold_base"] + rewards["gold_extra"]
+            vip_status = "有VIP" if rewards["has_vip"] else "无VIP"
+            
+            self.log_message.emit("VIP状态: %s" % vip_status)
+            self.log_message.emit("美元奖励: 基础%d + 额外%d = %d" % (rewards["dollar_base"], rewards["dollar_extra"], total_dollar))
+            self.log_message.emit("黄金奖励: 基础%d + 额外%d = %d" % (rewards["gold_base"], rewards["gold_extra"], total_gold))
+            
+            # 更新统计数据
+            self.battle_count += 1
+            self.total_dollar += total_dollar
+            self.total_gold += total_gold
+            
+            # 计算单次循环时长（在战斗计数器+1时）
+            if self.cycle_start_time:
+                cycle_end_time = datetime.now()
+                cycle_duration = (cycle_end_time - self.cycle_start_time).total_seconds()
+                cycle_duration_minutes = cycle_duration / 60
+                self.log_message.emit("单次循环时长: %.1f分钟 (%.0f秒)" % (cycle_duration_minutes, cycle_duration))
+                # 重置单次循环计时器，为下一次循环做准备
+                self.cycle_start_time = cycle_end_time
+            else:
+                cycle_duration = 0
+                cycle_duration_minutes = 0
+            
+            # 计算每小时收益
+            if self.start_time:
+                # 计算平均战斗时间（无论是否有循环数据都需要计算）
+                avg_battle_time = self.total_battle_time / self.battle_count if self.battle_count > 0 else 0
+                
+                # 使用CSV数据中的单次循环时长之和来计算每小时收益
+                total_cycle_hours = self.get_total_cycle_time_hours()
+                if total_cycle_hours > 0:
+                    dollar_per_hour = int(self.total_dollar / total_cycle_hours)
+                    gold_per_hour = int(self.total_gold / total_cycle_hours)
+                    battles_per_hour = self.battle_count / total_cycle_hours
+                    
+                    self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
+                    self.log_message.emit("每小时收益: 美元%d, 黄金%d, 战斗%.1f场 (基于循环时长%.1f小时)" % (dollar_per_hour, gold_per_hour, battles_per_hour, total_cycle_hours))
+                    self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
+                else:
+                    # 没有有效循环数据时，使用当前单次循环数据来估算每小时收益
+                    if cycle_duration_minutes > 0:
+                        # 基于当前单次循环时间估算每小时收益
+                        cycle_hours = cycle_duration_minutes / 60
+                        dollar_per_hour_estimate = int((self.total_dollar / self.battle_count) / cycle_hours) if self.battle_count > 0 else 0
+                        gold_per_hour_estimate = int((self.total_gold / self.battle_count) / cycle_hours) if self.battle_count > 0 else 0
+                        battles_per_hour_estimate = 1 / cycle_hours
+                        
+                        self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
+                        self.log_message.emit("每小时收益估算: 美元%d, 黄金%d, 战斗%.1f场 (基于本次循环%.1f分钟)" % (dollar_per_hour_estimate, gold_per_hour_estimate, battles_per_hour_estimate, cycle_duration_minutes))
+                        self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
+                    else:
+                        self.log_message.emit("当前统计: 战斗%d场, 总美元%d, 总黄金%d" % (self.battle_count, self.total_dollar, self.total_gold))
+                        self.log_message.emit("暂无有效循环时长数据，无法计算每小时收益")
+                        self.log_message.emit("平均战斗时间: %.1f分钟, 本次循环: %.1f分钟" % (avg_battle_time, cycle_duration_minutes))
+            
+            # 发送战斗完成信号
+            battle_info = rewards.copy()
+            battle_info['battle_duration_minutes'] = battle_duration_minutes
+            battle_info['battle_duration_seconds'] = battle_duration
+            battle_info['cycle_duration_minutes'] = cycle_duration_minutes
+            battle_info['cycle_duration_seconds'] = cycle_duration
+            self.battle_completed.emit(battle_info)
+            
+            # 保存统计数据
+            battle_data = {
+                'rewards': rewards,
+                'battle_duration_minutes': battle_duration_minutes,
+                'battle_duration_seconds': battle_duration,
+                'cycle_duration_minutes': cycle_duration_minutes,
+                'cycle_duration_seconds': cycle_duration
+            }
+            self.save_stats(battle_data)
+            
+            # 发送统计更新信号
+            stats = {
+                "battle_count": self.battle_count,
+                "total_dollar": self.total_dollar,
+                "total_gold": self.total_gold
+            }
+            self.stats_updated.emit(stats)
+        else:
+            # 计算战斗时间（即使奖励识别失败）
+            if self.current_battle_start_time:
+                battle_end_time = datetime.now()
+                battle_duration = (battle_end_time - self.current_battle_start_time).total_seconds()
+                battle_duration_minutes = battle_duration / 60
+                self.total_battle_time += battle_duration_minutes
+                self.log_message.emit("识别奖励失败，但战斗时间: %.1f分钟 (%.0f秒)" % (battle_duration_minutes, battle_duration))
+            
+            self.log_message.emit("识别奖励失败")
+        
+        self.log_message.emit("发送返回键")
+        self.send_back_key()
+        time.sleep(2)
+        
+        # 清理cache文件夹
+        self.cleanup_cache_files()
     
     def cleanup_cache_files(self):
         """清理cache文件夹中的所有文件"""

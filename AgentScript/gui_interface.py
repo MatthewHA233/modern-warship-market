@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
                              QFileDialog, QMessageBox, QGroupBox, QGridLayout,
                              QProgressBar, QStatusBar, QTabWidget, QTableWidget,
                              QTableWidgetItem, QHeaderView, QSpinBox, QCheckBox,
-                             QRadioButton)
+                             QRadioButton, QLineEdit)
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QFont, QPixmap, QIcon
 import json
@@ -16,6 +16,7 @@ import ADBHelper
 from pc_replayer import PCReplayer
 from mobile_replayer import MobileReplayer
 import glob
+import game_config
 
 class RecorderThread(QThread):
     """录制线程"""
@@ -79,6 +80,9 @@ class MainWindow(QMainWindow):
         
         # 动作列表选项卡
         self.create_actions_tab(tab_widget)
+        
+        # 动作编辑选项卡
+        self.create_edit_tab(tab_widget)
         
         # 统计信息选项卡
         self.create_statistics_tab(tab_widget)
@@ -319,6 +323,178 @@ class MainWindow(QMainWindow):
         action_buttons_layout.addStretch()
         
         layout.addLayout(action_buttons_layout)
+        
+    def create_edit_tab(self, tab_widget):
+        """创建动作编辑选项卡"""
+        edit_widget = QWidget()
+        tab_widget.addTab(edit_widget, "动作编辑")
+        
+        layout = QVBoxLayout(edit_widget)
+        
+        # 文件操作组
+        file_group = QGroupBox("文件操作")
+        file_layout = QHBoxLayout(file_group)
+        
+        self.edit_file_combo = QComboBox()
+        self.edit_file_combo.setMinimumWidth(300)
+        file_layout.addWidget(QLabel("录制文件:"))
+        file_layout.addWidget(self.edit_file_combo)
+        
+        self.load_file_btn = QPushButton("加载文件")
+        self.load_file_btn.clicked.connect(self.load_edit_file)
+        file_layout.addWidget(self.load_file_btn)
+        
+        self.refresh_files_btn = QPushButton("刷新文件")
+        self.refresh_files_btn.clicked.connect(self.refresh_edit_files)
+        file_layout.addWidget(self.refresh_files_btn)
+        
+        self.save_edit_btn = QPushButton("保存修改")
+        self.save_edit_btn.clicked.connect(self.save_edit_file)
+        file_layout.addWidget(self.save_edit_btn)
+        
+        file_layout.addStretch()
+        layout.addWidget(file_group)
+        
+        # 动作编辑表格
+        edit_table_group = QGroupBox("动作列表")
+        edit_table_layout = QVBoxLayout(edit_table_group)
+        
+        self.edit_actions_table = QTableWidget()
+        self.edit_actions_table.setColumnCount(7)
+        self.edit_actions_table.setHorizontalHeaderLabels([
+            "序号", "时间戳", "类型", "按键", "位置X", "位置Y", "持续时间"
+        ])
+        
+        # 设置表格列宽
+        header = self.edit_actions_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        
+        edit_table_layout.addWidget(self.edit_actions_table)
+        
+        # 表格操作按钮
+        table_buttons_layout = QHBoxLayout()
+        
+        self.delete_action_btn = QPushButton("删除选中")
+        self.delete_action_btn.clicked.connect(self.delete_selected_action)
+        table_buttons_layout.addWidget(self.delete_action_btn)
+        
+        self.move_up_btn = QPushButton("上移")
+        self.move_up_btn.clicked.connect(self.move_action_up)
+        table_buttons_layout.addWidget(self.move_up_btn)
+        
+        self.move_down_btn = QPushButton("下移")
+        self.move_down_btn.clicked.connect(self.move_action_down)
+        table_buttons_layout.addWidget(self.move_down_btn)
+        
+        table_buttons_layout.addStretch()
+        edit_table_layout.addLayout(table_buttons_layout)
+        
+        layout.addWidget(edit_table_group)
+        
+        # 动作添加表单
+        add_group = QGroupBox("添加新动作")
+        add_layout = QGridLayout(add_group)
+        
+        add_layout.addWidget(QLabel("类型:"), 0, 0)
+        self.add_type_combo = QComboBox()
+        self.add_type_combo.addItems(["tap", "long_press", "swipe", "key_press"])
+        self.add_type_combo.currentTextChanged.connect(self.on_add_type_changed)
+        add_layout.addWidget(self.add_type_combo, 0, 1)
+        
+        add_layout.addWidget(QLabel("按键:"), 0, 2)
+        self.add_key_combo = QComboBox()
+        self.add_key_combo.addItems([
+            "w",      # 前进
+            "s",      # 后退
+            "a",      # 左转
+            "d",      # 右转
+            "1",      # 武器1
+            "2",      # 武器2
+            "3",      # 武器3
+            "4",      # 武器4
+            "q",      # 回血
+            "e",      # 热诱弹
+            "up",     # 视角上
+            "down",   # 视角下
+            "left",   # 视角左
+            "right",  # 视角右
+            "z",      # 慢速视角
+            "x"       # 快速视角
+        ])
+        self.add_key_combo.setEditable(True)  # 允许手动输入其他按键
+        self.add_key_combo.currentTextChanged.connect(self.on_add_key_changed)
+        add_layout.addWidget(self.add_key_combo, 0, 3)
+        
+        add_layout.addWidget(QLabel("位置X:"), 1, 0)
+        self.add_x_spinbox = QSpinBox()
+        self.add_x_spinbox.setRange(0, 2560)
+        self.add_x_spinbox.setValue(500)
+        add_layout.addWidget(self.add_x_spinbox, 1, 1)
+        
+        add_layout.addWidget(QLabel("位置Y:"), 1, 2)
+        self.add_y_spinbox = QSpinBox()
+        self.add_y_spinbox.setRange(0, 1440)
+        self.add_y_spinbox.setValue(500)
+        add_layout.addWidget(self.add_y_spinbox, 1, 3)
+        
+        add_layout.addWidget(QLabel("持续时间(ms):"), 2, 0)
+        self.add_duration_spinbox = QSpinBox()
+        self.add_duration_spinbox.setRange(0, 10000)
+        self.add_duration_spinbox.setValue(100)
+        add_layout.addWidget(self.add_duration_spinbox, 2, 1)
+        
+        add_layout.addWidget(QLabel("时间戳:"), 2, 2)
+        self.add_timestamp_spinbox = QSpinBox()
+        self.add_timestamp_spinbox.setRange(0, 999999)
+        self.add_timestamp_spinbox.setValue(1000)
+        add_layout.addWidget(self.add_timestamp_spinbox, 2, 3)
+        
+        self.add_action_btn = QPushButton("添加动作")
+        self.add_action_btn.clicked.connect(self.add_new_action)
+        add_layout.addWidget(self.add_action_btn, 3, 0, 1, 4)
+        
+        layout.addWidget(add_group)
+        
+        # 回放控制组
+        replay_group = QGroupBox("手机回放控制")
+        replay_layout = QHBoxLayout(replay_group)
+        
+        replay_layout.addWidget(QLabel("设备:"))
+        self.edit_device_combo = QComboBox()
+        self.edit_device_combo.setMinimumWidth(200)
+        replay_layout.addWidget(self.edit_device_combo)
+        
+        self.refresh_edit_devices_btn = QPushButton("刷新设备")
+        self.refresh_edit_devices_btn.clicked.connect(self.refresh_edit_devices)
+        replay_layout.addWidget(self.refresh_edit_devices_btn)
+        
+        self.start_edit_replay_btn = QPushButton("开始回放")
+        self.start_edit_replay_btn.clicked.connect(self.start_edit_replay)
+        self.start_edit_replay_btn.setStyleSheet("QPushButton { background-color: #4CAF50; }")
+        replay_layout.addWidget(self.start_edit_replay_btn)
+        
+        self.stop_edit_replay_btn = QPushButton("停止回放")
+        self.stop_edit_replay_btn.clicked.connect(self.stop_edit_replay)
+        self.stop_edit_replay_btn.setStyleSheet("QPushButton { background-color: #f44336; }")
+        self.stop_edit_replay_btn.setEnabled(False)
+        replay_layout.addWidget(self.stop_edit_replay_btn)
+        
+        replay_layout.addStretch()
+        layout.addWidget(replay_group)
+        
+        # 初始化编辑相关数据
+        self.edit_actions_data = []
+        self.edit_file_path = ""
+        
+        # 刷新文件列表和设备列表
+        self.refresh_edit_files()
+        self.refresh_edit_devices()
         
     def create_statistics_tab(self, tab_widget):
         """创建统计信息选项卡"""
@@ -916,6 +1092,426 @@ class MainWindow(QMainWindow):
         self.pc_replay_btn.setEnabled(not recording and not pc_replaying and not mobile_replaying)
         self.mobile_replay_btn.setEnabled(not recording and not pc_replaying and not mobile_replaying)  # 手机端回放按钮状态
         self.stop_replay_btn.setEnabled(pc_replaying or mobile_replaying)  # 包含手机端回放状态
+
+    # 动作编辑标签页相关方法
+    def refresh_edit_files(self):
+        """刷新编辑文件列表"""
+        try:
+            self.edit_file_combo.clear()
+            
+            recording_dir = os.path.join(os.path.dirname(__file__), "recording")
+            if not os.path.exists(recording_dir):
+                os.makedirs(recording_dir)
+            
+            # 查找JSON文件
+            pattern = os.path.join(recording_dir, "*.json")
+            json_files = glob.glob(pattern)
+            
+            if json_files:
+                # 按修改时间排序（最新的在前面）
+                json_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+                
+                for file_path in json_files:
+                    filename = os.path.basename(file_path)
+                    self.edit_file_combo.addItem(filename, file_path)
+                    
+            # 只有在状态栏存在时才显示消息
+            if hasattr(self, 'status_bar'):
+                self.status_bar.showMessage(f"找到 {len(json_files)} 个录制文件")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"刷新文件列表失败: {str(e)}")
+    
+    def refresh_edit_devices(self):
+        """刷新编辑设备列表"""
+        try:
+            self.edit_device_combo.clear()
+            devices = ADBHelper.getDevicesList()
+            
+            if devices:
+                for device in devices:
+                    self.edit_device_combo.addItem(device)
+                # 只有在状态栏存在时才显示消息
+                if hasattr(self, 'status_bar'):
+                    self.status_bar.showMessage(f"找到 {len(devices)} 个设备")
+            else:
+                self.edit_device_combo.addItem("未找到设备")
+                # 只有在状态栏存在时才显示消息
+                if hasattr(self, 'status_bar'):
+                    self.status_bar.showMessage("未找到连接的设备")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"刷新设备列表失败: {str(e)}")
+    
+    def load_edit_file(self):
+        """加载录制文件进行编辑"""
+        try:
+            file_path = self.edit_file_combo.currentData()
+            if not file_path or not os.path.exists(file_path):
+                QMessageBox.warning(self, "警告", "请选择有效的录制文件")
+                return
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            self.edit_actions_data = data.get('actions', [])
+            self.edit_file_path = file_path
+            
+            # 更新表格显示
+            self.refresh_edit_actions_table()
+            
+            filename = os.path.basename(file_path)
+            self.status_bar.showMessage(f"已加载文件: {filename}, 动作数量: {len(self.edit_actions_data)}")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"加载文件失败: {str(e)}")
+    
+    def refresh_edit_actions_table(self):
+        """刷新编辑动作表格"""
+        try:
+            self.edit_actions_table.setRowCount(len(self.edit_actions_data))
+            
+            for i, action in enumerate(self.edit_actions_data):
+                # 序号
+                self.edit_actions_table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+                
+                # 时间戳
+                timestamp = action.get('timestamp', 0)
+                self.edit_actions_table.setItem(i, 1, QTableWidgetItem(f"{timestamp:.3f}"))
+                
+                # 类型
+                action_type = action.get('type', '')
+                self.edit_actions_table.setItem(i, 2, QTableWidgetItem(action_type))
+                
+                # 按键
+                key = action.get('key', '')
+                self.edit_actions_table.setItem(i, 3, QTableWidgetItem(str(key)))
+                
+                # 位置
+                position = action.get('position', [0, 0])
+                if isinstance(position, list) and len(position) >= 2:
+                    self.edit_actions_table.setItem(i, 4, QTableWidgetItem(str(position[0])))
+                    self.edit_actions_table.setItem(i, 5, QTableWidgetItem(str(position[1])))
+                else:
+                    self.edit_actions_table.setItem(i, 4, QTableWidgetItem("0"))
+                    self.edit_actions_table.setItem(i, 5, QTableWidgetItem("0"))
+                
+                # 持续时间
+                duration = action.get('duration', 0)
+                self.edit_actions_table.setItem(i, 6, QTableWidgetItem(f"{duration}"))
+                
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"刷新表格失败: {str(e)}")
+    
+    def add_new_action(self):
+        """添加新动作"""
+        try:
+            if not self.edit_actions_data:
+                QMessageBox.warning(self, "警告", "请先加载录制文件")
+                return
+            
+            # 获取表单数据
+            action_type = self.add_type_combo.currentText()
+            key = self.add_key_combo.currentText().strip()
+            x = self.add_x_spinbox.value()
+            y = self.add_y_spinbox.value()
+            duration = self.add_duration_spinbox.value()
+            timestamp = self.add_timestamp_spinbox.value()
+            
+            # 创建新动作
+            new_action = {
+                'type': action_type,
+                'key': key,
+                'position': [x, y],
+                'duration': duration,
+                'timestamp': timestamp,
+                'source': 'manual_edit'
+            }
+            
+            # 添加到动作列表
+            self.edit_actions_data.append(new_action)
+            
+            # 按时间戳排序
+            self.edit_actions_data.sort(key=lambda x: x.get('timestamp', 0))
+            
+            # 刷新表格
+            self.refresh_edit_actions_table()
+            
+            self.status_bar.showMessage(f"已添加新动作: {action_type}, 总动作数: {len(self.edit_actions_data)}")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"添加动作失败: {str(e)}")
+    
+    def delete_selected_action(self):
+        """删除选中的动作"""
+        try:
+            current_row = self.edit_actions_table.currentRow()
+            if current_row < 0:
+                QMessageBox.warning(self, "警告", "请先选择要删除的动作")
+                return
+            
+            reply = QMessageBox.question(
+                self, "确认删除", 
+                f"确定要删除第 {current_row + 1} 个动作吗？",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            
+            if reply == QMessageBox.Yes:
+                del self.edit_actions_data[current_row]
+                self.refresh_edit_actions_table()
+                self.status_bar.showMessage(f"已删除动作, 剩余动作数: {len(self.edit_actions_data)}")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"删除动作失败: {str(e)}")
+    
+    def move_action_up(self):
+        """上移动作"""
+        try:
+            current_row = self.edit_actions_table.currentRow()
+            if current_row <= 0:
+                QMessageBox.warning(self, "警告", "无法上移该动作")
+                return
+            
+            # 交换动作位置
+            self.edit_actions_data[current_row], self.edit_actions_data[current_row - 1] = \
+                self.edit_actions_data[current_row - 1], self.edit_actions_data[current_row]
+            
+            # 刷新表格并保持选中状态
+            self.refresh_edit_actions_table()
+            self.edit_actions_table.setCurrentCell(current_row - 1, 0)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"移动动作失败: {str(e)}")
+    
+    def move_action_down(self):
+        """下移动作"""
+        try:
+            current_row = self.edit_actions_table.currentRow()
+            if current_row < 0 or current_row >= len(self.edit_actions_data) - 1:
+                QMessageBox.warning(self, "警告", "无法下移该动作")
+                return
+            
+            # 交换动作位置
+            self.edit_actions_data[current_row], self.edit_actions_data[current_row + 1] = \
+                self.edit_actions_data[current_row + 1], self.edit_actions_data[current_row]
+            
+            # 刷新表格并保持选中状态
+            self.refresh_edit_actions_table()
+            self.edit_actions_table.setCurrentCell(current_row + 1, 0)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"移动动作失败: {str(e)}")
+    
+    def save_edit_file(self):
+        """保存编辑后的文件"""
+        try:
+            if not self.edit_file_path:
+                QMessageBox.warning(self, "警告", "请先加载录制文件")
+                return
+            
+            if not self.edit_actions_data:
+                QMessageBox.warning(self, "警告", "没有动作数据可保存")
+                return
+            
+            # 读取原始文件数据
+            with open(self.edit_file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # 更新动作数据
+            data['actions'] = self.edit_actions_data
+            data['total_actions'] = len(self.edit_actions_data)
+            
+            # 重新计算总时长
+            if self.edit_actions_data:
+                max_timestamp = max(action.get('timestamp', 0) for action in self.edit_actions_data)
+                data['total_duration'] = max_timestamp
+            
+            # 添加编辑标记
+            data['manually_edited'] = True
+            data['edit_time'] = datetime.now().isoformat()
+            
+            # 保存文件
+            with open(self.edit_file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            filename = os.path.basename(self.edit_file_path)
+            self.status_bar.showMessage(f"文件已保存: {filename}")
+            QMessageBox.information(self, "成功", "文件保存成功！")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"保存文件失败: {str(e)}")
+    
+    def start_edit_replay(self):
+        """开始编辑回放"""
+        try:
+            if not self.edit_actions_data:
+                QMessageBox.warning(self, "警告", "请先加载录制文件")
+                return
+            
+            device_id = self.edit_device_combo.currentText()
+            if not device_id or device_id == "未找到设备":
+                QMessageBox.warning(self, "警告", "请选择有效的设备")
+                return
+            
+            if self.mobile_replayer.is_replaying():
+                QMessageBox.warning(self, "警告", "回放器正在运行中，请先停止")
+                return
+            
+            # 创建临时文件用于回放
+            temp_data = {
+                'device_id': device_id,
+                'actions': self.edit_actions_data,
+                'total_duration': max(action.get('timestamp', 0) for action in self.edit_actions_data) if self.edit_actions_data else 0,
+                'total_actions': len(self.edit_actions_data),
+                'created_time': datetime.now().isoformat(),
+                'temp_edit_file': True
+            }
+            
+            temp_file_path = os.path.join(os.path.dirname(__file__), "cache", "temp_edit_replay.json")
+            os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+            
+            with open(temp_file_path, 'w', encoding='utf-8') as f:
+                json.dump(temp_data, f, indent=2, ensure_ascii=False)
+            
+            # 设置回放器
+            self.mobile_replayer.set_device(device_id)
+            compensation = 150  # 默认补偿时间
+            self.mobile_replayer.set_long_press_compensation(compensation)
+            
+            # 确认对话框
+            reply = QMessageBox.question(
+                self, '确认回放', 
+                f'即将在设备 {device_id} 上回放编辑后的动作:\n动作数量: {len(self.edit_actions_data)}\n\n确认开始回放吗？',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+            
+            if reply == QMessageBox.Yes:
+                if self.mobile_replayer.load_and_replay(temp_file_path):
+                    self.start_edit_replay_btn.setEnabled(False)
+                    self.stop_edit_replay_btn.setEnabled(True)
+                    self.status_bar.showMessage("编辑回放已开始")
+                else:
+                    QMessageBox.warning(self, "错误", "回放启动失败")
+                    
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"开始回放失败: {str(e)}")
+    
+    def stop_edit_replay(self):
+        """停止编辑回放"""
+        try:
+            if self.mobile_replayer.is_replaying():
+                self.mobile_replayer.stop_replay()
+                
+            self.start_edit_replay_btn.setEnabled(True)
+            self.stop_edit_replay_btn.setEnabled(False)
+            self.status_bar.showMessage("编辑回放已停止")
+            
+            # 清理临时文件
+            temp_file_path = os.path.join(os.path.dirname(__file__), "cache", "temp_edit_replay.json")
+            if os.path.exists(temp_file_path):
+                try:
+                    os.remove(temp_file_path)
+                except:
+                    pass
+                    
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"停止回放失败: {str(e)}")
+
+    def on_add_type_changed(self):
+        """处理动作类型变化"""
+        selected_type = self.add_type_combo.currentText()
+        if selected_type == "long_press":
+            # 长按操作：保持当前位置，设置长按时间
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['long_press_duration'])
+        elif selected_type == "swipe":
+            # 滑动操作：设置屏幕中心为起点，设置滑动时间
+            center_x, center_y = game_config.SCREEN_CENTER
+            self.add_x_spinbox.setValue(center_x)
+            self.add_y_spinbox.setValue(center_y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['swipe_duration'])
+        elif selected_type == "key_press":
+            # 按键操作：不需要坐标
+            self.add_x_spinbox.setValue(0)
+            self.add_y_spinbox.setValue(0)
+            self.add_duration_spinbox.setValue(0)
+        elif selected_type == "tap":
+            # 点按操作：设置默认点按时间
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
+
+    def on_add_key_changed(self):
+        """处理按键变化"""
+        selected_key = self.add_key_combo.currentText()
+        
+        # 根据按键设置对应的坐标和参数
+        if selected_key == 'w':  # 前进
+            self.add_type_combo.setCurrentText("tap")
+            x, y = game_config.MOVEMENT_CONTROLS['up']
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
+            
+        elif selected_key == 's':  # 后退
+            self.add_type_combo.setCurrentText("tap")
+            x, y = game_config.MOVEMENT_CONTROLS['down']
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
+            
+        elif selected_key == 'a':  # 左转
+            self.add_type_combo.setCurrentText("long_press")
+            x, y = game_config.MOVEMENT_CONTROLS['left']
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['long_press_duration'])
+            
+        elif selected_key == 'd':  # 右转
+            self.add_type_combo.setCurrentText("long_press")
+            x, y = game_config.MOVEMENT_CONTROLS['right']
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['long_press_duration'])
+            
+        elif selected_key in ['1', '2', '3', '4']:  # 武器
+            self.add_type_combo.setCurrentText("tap")
+            x, y = game_config.WEAPON_CONTROLS[selected_key]
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
+            
+        elif selected_key == 'q':  # 回血
+            self.add_type_combo.setCurrentText("tap")
+            x, y = game_config.SPECIAL_CONTROLS['heal']
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
+            
+        elif selected_key == 'e':  # 热诱弹
+            self.add_type_combo.setCurrentText("tap")
+            x, y = game_config.SPECIAL_CONTROLS['decoy']
+            self.add_x_spinbox.setValue(x)
+            self.add_y_spinbox.setValue(y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
+            
+        elif selected_key in ['up', 'down', 'left', 'right']:  # 视角控制
+            self.add_type_combo.setCurrentText("swipe")
+            # 视角控制从屏幕中心开始
+            center_x, center_y = game_config.SCREEN_CENTER
+            self.add_x_spinbox.setValue(center_x)
+            self.add_y_spinbox.setValue(center_y)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['swipe_duration'])
+            
+        elif selected_key in ['z', 'x']:  # 视角模式切换
+            self.add_type_combo.setCurrentText("key_press")
+            self.add_x_spinbox.setValue(0)
+            self.add_y_spinbox.setValue(0)
+            self.add_duration_spinbox.setValue(0)
+            
+        else:  # 其他按键或自定义按键
+            self.add_type_combo.setCurrentText("tap")
+            self.add_x_spinbox.setValue(500)
+            self.add_y_spinbox.setValue(500)
+            self.add_duration_spinbox.setValue(game_config.DEFAULT_PARAMS['tap_duration'])
 
 def main():
     """主函数"""
