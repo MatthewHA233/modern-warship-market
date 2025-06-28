@@ -61,6 +61,10 @@ class AutoTradeMainWindow(QMainWindow):
         self.is_tracking = False
         self.tracking_thread = None
         
+        # 初始化自动化采集相关变量
+        self.auto_collect_process = None
+        self.is_auto_collecting = False
+        
         # 创建跨线程信号
         self.tracking_signals = TrackingSignals()
         self.tracking_signals.status_updated.connect(self.update_status_safe)
@@ -111,6 +115,27 @@ class AutoTradeMainWindow(QMainWindow):
         self.get_targets_btn = QPushButton("刷新获取全部标的")
         self.get_targets_btn.clicked.connect(self.get_all_targets)
         button_layout.addWidget(self.get_targets_btn)
+        
+        # 添加自动化采集按钮
+        self.auto_collect_btn = QPushButton("启动自动化采集")
+        self.auto_collect_btn.clicked.connect(self.toggle_auto_collection)
+        self.auto_collect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+            QPushButton:pressed {
+                background-color: #1e7e34;
+            }
+        """)
+        button_layout.addWidget(self.auto_collect_btn)
         
         self.save_filter_btn = QPushButton("保存筛选预设")
         self.save_filter_btn.clicked.connect(self.save_filter_config)
@@ -679,6 +704,278 @@ class AutoTradeMainWindow(QMainWindow):
             
         except Exception as e:
             print(f"重新排序时出错: {str(e)}")
+
+    def start_auto_collection(self):
+        """启动自动化市场数据采集"""
+        try:
+            import subprocess
+            import sys
+            import os
+            
+            # 检查auto_market_collector.py是否存在
+            script_path = "./auto_market_collector.py"
+            if not os.path.exists(script_path):
+                QMessageBox.critical(self, "文件不存在", 
+                    f"找不到自动化采集脚本: {script_path}\n请确保文件存在于项目根目录中")
+                return
+            
+            # 显示确认对话框
+            reply = QMessageBox.question(self, "启动自动化采集", 
+                "即将启动自动化市场数据采集脚本。\n\n"
+                "该脚本将：\n"
+                "• 检查当天是否已有市场普查数据\n"
+                "• 如无数据则执行完整市场普查\n"
+                "• 如有数据则根据筛选条件生成小抽查\n\n"
+                "是否继续？",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No)
+            
+            if reply != QMessageBox.Yes:
+                return
+            
+            # 禁用按钮，防止重复点击
+            self.auto_collect_btn.setEnabled(False)
+            self.auto_collect_btn.setText("正在启动...")
+            
+            # 在新进程中启动自动化采集脚本
+            try:
+                # 使用subprocess.Popen以非阻塞方式启动
+                self.auto_collect_process = subprocess.Popen(
+                    [sys.executable, script_path],
+                    cwd="./",  # 设置工作目录
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8'
+                )
+                
+                # 更新状态
+                self.is_auto_collecting = True
+                
+                # 更新按钮为红色停止按钮
+                self.update_collect_button_to_stop()
+                
+                QMessageBox.information(self, "启动成功", 
+                    f"自动化采集脚本已启动！\n\n"
+                    f"进程ID: {self.auto_collect_process.pid}\n"
+                    f"脚本路径: {script_path}\n\n"
+                    f"请查看命令行窗口获取实时进度信息。\n"
+                    f"采集完成后，点击'刷新获取全部标的'按钮查看新数据。\n\n"
+                    f"点击红色按钮可强制结束采集。")
+                
+                print(f"已启动自动化采集脚本，进程ID: {self.auto_collect_process.pid}")
+                
+                # 启动监控线程，检查进程是否完成
+                import threading
+                monitor_thread = threading.Thread(target=self.monitor_collection_process, daemon=True)
+                monitor_thread.start()
+                
+            except Exception as e:
+                QMessageBox.critical(self, "启动失败", 
+                    f"启动自动化采集脚本时出错：\n{str(e)}\n\n"
+                    f"请检查：\n"
+                    f"1. Python环境是否正确\n"
+                    f"2. 脚本文件是否完整\n"
+                    f"3. 相关依赖是否已安装")
+                print(f"启动自动化采集脚本失败: {str(e)}")
+                self.reset_collect_button()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"启动自动化采集时出错: {str(e)}")
+            print(f"启动自动化采集时出错: {str(e)}")
+            self.reset_collect_button()
+
+    def stop_auto_collection(self):
+        """停止自动化市场数据采集"""
+        try:
+            if self.auto_collect_process and self.auto_collect_process.poll() is None:
+                # 显示确认对话框
+                reply = QMessageBox.question(self, "强制结束采集", 
+                    "确定要强制结束自动化市场数据采集吗？\n\n"
+                    "这将中断正在进行的采集过程。",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No)
+                
+                if reply != QMessageBox.Yes:
+                    return
+                
+                pid = self.auto_collect_process.pid
+                print(f"正在强制结束采集进程 {pid}...")
+                
+                # 尝试多种方式强制结束进程
+                import platform
+                import os
+                import signal
+                
+                if platform.system() == "Windows":
+                    # Windows系统使用taskkill命令强制结束
+                    try:
+                        import subprocess
+                        # 先尝试优雅终止
+                        self.auto_collect_process.terminate()
+                        import time
+                        time.sleep(0.5)
+                        
+                        # 检查进程是否还在运行
+                        if self.auto_collect_process.poll() is None:
+                            print(f"进程 {pid} 未响应terminate，使用taskkill强制结束...")
+                            # 使用taskkill /F强制结束进程树
+                            subprocess.run(['taskkill', '/F', '/T', '/PID', str(pid)], 
+                                         capture_output=True, text=True)
+                            time.sleep(0.5)
+                            
+                            # 再次检查
+                            if self.auto_collect_process.poll() is None:
+                                # 最后尝试kill
+                                self.auto_collect_process.kill()
+                                print(f"使用kill()强制结束进程 {pid}")
+                            else:
+                                print(f"进程 {pid} 已被taskkill成功结束")
+                        else:
+                            print(f"进程 {pid} 已响应terminate正常结束")
+                            
+                    except Exception as e:
+                        print(f"Windows强制结束失败，尝试备用方法: {str(e)}")
+                        # 备用方法：直接kill
+                        try:
+                            self.auto_collect_process.kill()
+                            print(f"使用backup kill()强制结束进程 {pid}")
+                        except:
+                            print(f"所有终止方法都失败了")
+                else:
+                    # Linux/Mac系统
+                    try:
+                        # 先尝试SIGTERM
+                        os.kill(pid, signal.SIGTERM)
+                        import time
+                        time.sleep(1)
+                        
+                        # 检查进程是否还在运行
+                        if self.auto_collect_process.poll() is None:
+                            print(f"进程 {pid} 未响应SIGTERM，使用SIGKILL强制结束...")
+                            os.kill(pid, signal.SIGKILL)
+                            time.sleep(0.5)
+                        else:
+                            print(f"进程 {pid} 已响应SIGTERM正常结束")
+                            
+                    except ProcessLookupError:
+                        print(f"进程 {pid} 已不存在")
+                    except Exception as e:
+                        print(f"Unix强制结束失败: {str(e)}")
+                        # 备用方法
+                        self.auto_collect_process.kill()
+                
+                QMessageBox.information(self, "结束成功", "自动化采集已强制结束")
+            
+            # 重置状态
+            self.reset_collect_button()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "停止失败", f"停止自动化采集时出错: {str(e)}")
+            print(f"停止自动化采集时出错: {str(e)}")
+            # 即使失败也要重置按钮状态
+            self.reset_collect_button()
+
+    def update_collect_button_to_stop(self):
+        """更新采集按钮为停止状态（红色）"""
+        self.auto_collect_btn.setText("强制结束采集")
+        self.auto_collect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #dc3545;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #c82333;
+            }
+            QPushButton:pressed {
+                background-color: #bd2130;
+            }
+        """)
+        self.auto_collect_btn.setEnabled(True)
+
+    def reset_collect_button(self):
+        """重置采集按钮为启动状态（绿色）"""
+        self.auto_collect_process = None
+        self.is_auto_collecting = False
+        self.auto_collect_btn.setText("启动自动化采集")
+        self.auto_collect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+            QPushButton:pressed {
+                background-color: #1e7e34;
+            }
+        """)
+        self.auto_collect_btn.setEnabled(True)
+
+    def check_process_alive(self, pid):
+        """检查进程是否还在运行"""
+        try:
+            import platform
+            if platform.system() == "Windows":
+                import subprocess
+                result = subprocess.run(['tasklist', '/FI', f'PID eq {pid}'], 
+                                      capture_output=True, text=True)
+                return str(pid) in result.stdout
+            else:
+                import os
+                try:
+                    os.kill(pid, 0)  # 发送信号0检查进程是否存在
+                    return True
+                except ProcessLookupError:
+                    return False
+        except Exception as e:
+            print(f"检查进程状态失败: {str(e)}")
+            return False
+
+    def monitor_collection_process(self):
+        """监控采集进程状态"""
+        try:
+            if self.auto_collect_process:
+                pid = self.auto_collect_process.pid
+                print(f"开始监控采集进程 {pid}")
+                
+                # 等待进程结束
+                self.auto_collect_process.wait()
+                print(f"自动化采集进程 {pid} 已结束，返回码: {self.auto_collect_process.returncode}")
+                
+                # 在主线程中重置按钮状态
+                QTimer.singleShot(0, self.on_collection_finished)
+                
+        except Exception as e:
+            print(f"监控采集进程时出错: {str(e)}")
+            # 如果监控出错，也要重置状态
+            QTimer.singleShot(0, self.reset_collect_button)
+
+    def on_collection_finished(self):
+        """当采集完成时的处理"""
+        if self.auto_collect_process:
+            return_code = self.auto_collect_process.returncode
+            if return_code == 0:
+                QMessageBox.information(self, "采集完成", 
+                    "自动化市场数据采集已完成！\n\n"
+                    "点击'刷新获取全部标的'按钮查看新数据。")
+                print("自动化采集正常完成")
+            else:
+                QMessageBox.warning(self, "采集异常", 
+                    f"自动化采集进程异常结束\n返回码: {return_code}\n\n"
+                    "请检查命令行输出获取详细信息。")
+                print(f"自动化采集异常结束，返回码: {return_code}")
+        
+        # 重置按钮状态
+        self.reset_collect_button()
 
     def on_tab_changed(self, index):
         """当标签页切换时的处理"""
@@ -1991,6 +2288,17 @@ class AutoTradeMainWindow(QMainWindow):
             else:
                 detail_widget.hide()
                 toggle_btn.setText("展开详情")
+
+    def toggle_auto_collection(self):
+        """切换自动化采集状态"""
+        if self.is_auto_collecting:
+            self.stop_auto_collection()
+        else:
+            self.start_auto_collection()
+
+    def is_auto_collecting_func(self):
+        """检查是否正在自动化采集"""
+        return self.auto_collect_process is not None and self.auto_collect_process.poll() is None
 
 
 def main():

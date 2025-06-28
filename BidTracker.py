@@ -88,12 +88,23 @@ if not os.path.exists("./market_data"):
     os.makedirs("./market_data")
 
 def find_latest_price_data():
-    """查找最新的价格数据文件"""
-    price_files = glob.glob("market_data/price_data_*.csv")
-    if not price_files:
-        print("未找到价格数据文件")
+    """查找最新的市场普查或小抽查数据文件"""
+    # 查找市场普查文件
+    survey_files = glob.glob("market_data/市场普查_*.csv")
+    # 查找小抽查文件  
+    small_check_files = glob.glob("market_data/小抽查_*.csv")
+    
+    # 合并所有文件
+    all_files = survey_files + small_check_files
+    
+    if not all_files:
+        print("未找到市场普查或小抽查数据文件")
         return None
-    return max(price_files)
+    
+    # 返回最新的文件（按文件名排序，最新的在最后）
+    latest_file = max(all_files)
+    print(f"找到最新数据文件: {latest_file}")
+    return latest_file
 
 def search_items(keyword, price_df):
     """根据关键词搜索物品"""
