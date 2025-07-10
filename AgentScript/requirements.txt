@@ -3,4 +3,6 @@ PyQt5>=5.15.0
 keyboard>=0.13.5
 pynput>=1.7.6
 opencv-python>=4.8.0
-numpy>=1.24.0 
+numpy>=1.24.0
+cnocr>=2.2.0
+onnxruntime>=1.16.0 
