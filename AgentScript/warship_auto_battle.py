@@ -158,7 +158,7 @@ class ImageMatcher:
                 # 多队混战模式：只检测战斗状态
                 # 使用不同的检测区域和模板图片检测多队混战
                 multi_team_region = (952, 88, 998, 153)
-                is_multi_team, _ = self.match_template(screen, "multi_team_battle.png", multi_team_region, 0.7)
+                is_multi_team, _ = self.match_template(screen, "multi_team_battle.png", multi_team_region, 0.4)
                 if is_multi_team:
                     return "fighting_attack"  # 多队混战也当作进攻模式处理
             
@@ -1505,8 +1505,13 @@ class MainWindow(QMainWindow):
         self.total_dollar_label.setText("{:,}".format(stats['total_dollar']))
         self.total_gold_label.setText("{:,}".format(stats['total_gold']))
         
-        # 计算并显示估计总肝池抽数
-        estimated_liver_pool = stats["battle_count"] / 2.0  # 每2场战斗约等于1次肝池抽取
+        # 计算并显示估计总肝池抽数，根据游戏模式使用不同的系数
+        if hasattr(self.worker, 'game_mode') and self.worker and self.worker.game_mode == "multi_team":
+            # 多队混战模式：battle_count * 23/30
+            estimated_liver_pool = stats["battle_count"] * (23.0 / 30.0)
+        else:
+            # 占领模式：每2场战斗约等于1次肝池抽取
+            estimated_liver_pool = stats["battle_count"] / 2.0
         self.total_liver_pool_label.setText("{:.1f}".format(estimated_liver_pool))
         
         # 显示累计战斗时间
@@ -1538,7 +1543,14 @@ class MainWindow(QMainWindow):
                 dollar_per_hour = int(stats["total_dollar"] / total_cycle_hours)
                 gold_per_hour = int(stats["total_gold"] / total_cycle_hours)
                 cycles_per_hour = stats["battle_count"] / total_cycle_hours
-                liver_pool_per_hour = cycles_per_hour / 2.0  # 每小时肝池抽数 = 每小时循环数 / 2
+                
+                # 根据游戏模式计算每小时肝池抽数
+                if hasattr(self.worker, 'game_mode') and self.worker and self.worker.game_mode == "multi_team":
+                    # 多队混战模式：每小时循环数 * 23/30
+                    liver_pool_per_hour = cycles_per_hour * (23.0 / 30.0)
+                else:
+                    # 占领模式：每小时循环数 / 2
+                    liver_pool_per_hour = cycles_per_hour / 2.0
                 
                 self.dollar_per_hour_label.setText("{:,}".format(dollar_per_hour))
                 self.gold_per_hour_label.setText("{:,}".format(gold_per_hour))
