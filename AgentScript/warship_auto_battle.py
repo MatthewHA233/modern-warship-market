@@ -24,7 +24,8 @@ import numpy as np
 from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
                             QWidget, QPushButton, QComboBox, QLabel, QTextEdit, 
-                            QGroupBox, QSpinBox, QCheckBox, QProgressBar, QStatusBar)
+                            QGroupBox, QSpinBox, QCheckBox, QProgressBar, QStatusBar,
+                            QRadioButton)
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QFont, QIcon
 import ADBHelper
@@ -47,8 +48,9 @@ REWARD_REGIONS = {
 class ImageMatcher:
     """图像匹配器"""
     
-    def __init__(self, device_id):
+    def __init__(self, device_id, game_mode="occupation"):
         self.device_id = device_id
+        self.game_mode = game_mode
         self.templates_dir = os.path.join(SCRIPT_DIR, "templates")
         
     def capture_screen(self):
@@ -140,15 +142,25 @@ class ImageMatcher:
             if is_main:
                 return "main_page"
             
-            # 检测防守模式
-            is_defense, _ = self.match_template(screen, "fangshou.png", detection_region, 0.7)
-            if is_defense:
-                return "fighting_defense"
-            
-            # 检测进攻模式
-            is_attack, _ = self.match_template(screen, "fighting.png", detection_region, 0.7)
-            if is_attack:
-                return "fighting_attack"
+            # 根据游戏模式进行不同的检测
+            if self.game_mode == "occupation":
+                # 占领模式：检测防守和进攻
+                # 检测防守模式
+                is_defense, _ = self.match_template(screen, "fangshou.png", detection_region, 0.7)
+                if is_defense:
+                    return "fighting_defense"
+                
+                # 检测进攻模式
+                is_attack, _ = self.match_template(screen, "fighting.png", detection_region, 0.7)
+                if is_attack:
+                    return "fighting_attack"
+            else:
+                # 多队混战模式：只检测战斗状态
+                # 使用不同的检测区域和模板图片检测多队混战
+                multi_team_region = (952, 88, 998, 153)
+                is_multi_team, _ = self.match_template(screen, "multi_team_battle.png", multi_team_region, 0.7)
+                if is_multi_team:
+                    return "fighting_attack"  # 多队混战也当作进攻模式处理
             
             return "other"
             
@@ -181,7 +193,7 @@ class ImageMatcher:
             detection_region = (278, 32, 513, 123)
             
             # 检测胜利图标
-            is_victory, _ = self.match_template(screen, "shengli.png", detection_region, 0.7)
+            is_victory, _ = self.match_template(screen, "shengli.png", detection_region, 0.4)
             if is_victory:
                 print("检测到战斗结算画面")
                 return True
@@ -293,7 +305,8 @@ class AutoBattleWorker(QThread):
         self.config = config
         self.running = False
         self.in_replay = False  # 添加回放状态标志
-        self.matcher = ImageMatcher(device_id)
+        self.game_mode = config.get("game_mode", "occupation")  # 获取游戏模式
+        self.matcher = ImageMatcher(device_id, self.game_mode)  # 传递游戏模式
         self.replayer = MobileReplayer()
         self.replayer.set_device(device_id)
         
@@ -382,7 +395,13 @@ class AutoBattleWorker(QThread):
                     if state == "main_page":
                         self.handle_main_page()
                     elif state == "fighting_defense":
-                        self.handle_defense_mode()
+                        # 只有占领模式才处理防守状态
+                        if self.game_mode == "occupation":
+                            self.handle_defense_mode()
+                        else:
+                            # 多队混战模式不应该检测到防守状态，如果检测到了就当作其他界面处理
+                            self.log_message.emit("多队混战模式下检测到异常的防守状态，当作其他界面处理")
+                            self.handle_other_interface()
                     elif state == "fighting_attack":
                         self.handle_attack_mode()
                     elif state == "other":
@@ -1118,6 +1137,23 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(file_group)
         
+        # 游戏模式选择组
+        mode_group = QGroupBox("游戏模式")
+        mode_layout = QHBoxLayout(mode_group)
+        
+        self.occupation_mode_radio = QRadioButton("占领模式")
+        self.occupation_mode_radio.setChecked(self.config.get("game_mode", "occupation") == "occupation")
+        mode_layout.addWidget(self.occupation_mode_radio)
+        
+        self.multi_team_mode_radio = QRadioButton("多队混战")
+        self.multi_team_mode_radio.setChecked(self.config.get("game_mode", "occupation") == "multi_team")
+        mode_layout.addWidget(self.multi_team_mode_radio)
+        
+        mode_layout.addWidget(QLabel("说明: 占领模式包含进攻/防守，多队混战只有战斗状态"))
+        mode_layout.addStretch()
+        
+        main_layout.addWidget(mode_group)
+        
         # 状态显示组
         status_group = QGroupBox("运行状态")
         status_layout = QVBoxLayout(status_group)
@@ -1265,12 +1301,16 @@ class MainWindow(QMainWindow):
             "match_wait_time": 12,
             "smart_view_delay": 2.0,
             "auto_fire_enabled": False,
-            "auto_fire_delay": 30
+            "auto_fire_delay": 30,
+            "game_mode": "occupation"  # 默认为占领模式
         }
     
     def save_config(self):
         """保存配置"""
         try:
+            # 获取当前选择的游戏模式
+            game_mode = "occupation" if self.occupation_mode_radio.isChecked() else "multi_team"
+            
             self.config = {
                 "device_id": self.device_combo.currentText(),
                 "replay_file": self.replay_combo.currentData(),
@@ -1280,7 +1320,8 @@ class MainWindow(QMainWindow):
                 "match_wait_time": self.match_wait_spin.value(),
                 "smart_view_delay": float(self.smart_view_delay_spin.value()),
                 "auto_fire_enabled": self.auto_fire_checkbox.isChecked(),
-                "auto_fire_delay": self.auto_fire_delay_spin.value()
+                "auto_fire_delay": self.auto_fire_delay_spin.value(),
+                "game_mode": game_mode
             }
             
             with open(self.config_file, 'w', encoding='utf-8') as f:
@@ -1368,6 +1409,8 @@ class MainWindow(QMainWindow):
                 return
             
             # 更新配置
+            game_mode = "occupation" if self.occupation_mode_radio.isChecked() else "multi_team"
+            
             config = {
                 "long_press_compensation": self.compensation_spin.value(),
                 "check_interval": self.interval_spin.value(),
@@ -1375,7 +1418,8 @@ class MainWindow(QMainWindow):
                 "match_wait_time": self.match_wait_spin.value(),
                 "smart_view_delay": float(self.smart_view_delay_spin.value()),
                 "auto_fire_enabled": self.auto_fire_checkbox.isChecked(),
-                "auto_fire_delay": self.auto_fire_delay_spin.value()
+                "auto_fire_delay": self.auto_fire_delay_spin.value(),
+                "game_mode": game_mode
             }
             
             # 创建工作线程
@@ -1427,10 +1471,13 @@ class MainWindow(QMainWindow):
     
     def on_state_detected(self, state):
         """游戏状态检测处理"""
+        # 获取当前游戏模式
+        current_mode = "multi_team" if hasattr(self, 'worker') and self.worker and self.worker.game_mode == "multi_team" else "occupation"
+        
         state_map = {
             "main_page": "主界面",
             "fighting_defense": "战斗(防守)",
-            "fighting_attack": "战斗(进攻)",
+            "fighting_attack": "战斗(多队混战)" if current_mode == "multi_team" else "战斗(进攻)",
             "fighting_attack_replaying": "战斗(回放中)",
             "other": "其他界面",
             "unknown": "未知"

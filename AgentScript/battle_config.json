@@ -1,11 +1,12 @@
 {
   "device_id": "Y57XRWSS8PH6W84L",
-  "replay_file": "D:\\my_pro\\GitHub\\modern-warship-market\\AgentScript\\recording\\花尾鸽走位+自动攻击.json",
+  "replay_file": "D:\\my_pro\\GitHub\\modern-warship-market\\AgentScript\\recording\\企业多队混战+自动攻击.json",
   "long_press_compensation": 120,
   "check_interval": 2,
   "start_timing_calibration": 0.1,
   "match_wait_time": 12,
   "smart_view_delay": 2.0,
-  "auto_fire_enabled": true,
-  "auto_fire_delay": 20
+  "auto_fire_enabled": false,
+  "auto_fire_delay": 20,
+  "game_mode": "multi_team"
 }

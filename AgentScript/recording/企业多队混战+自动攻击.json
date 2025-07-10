@@ -1,0 +1,202 @@
+{
+  "device_id": "Y57XRWSS8PH6W84L",
+  "pc_replay_file": "D:/my_pro/GitHub/modern-warship-market/AgentScript/recording/企业多队混战.json",
+  "total_duration": 39.30163502693176,
+  "total_actions": 15,
+  "adb_actions_count": 10,
+  "pc_actions_count": 5,
+  "created_time": "2025-07-10T17:04:48.872127",
+  "auto_merged": true,
+  "actions": [
+    {
+      "type": "tap",
+      "key": "w",
+      "position": [
+        442,
+        702
+      ],
+      "timestamp": 4.792036056518555,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 2.317607879638672,
+      "time_offset": 2.474428176879883,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "w",
+      "position": [
+        442,
+        702
+      ],
+      "timestamp": 5.1303300857543945,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 2.6559019088745117,
+      "time_offset": 2.474428176879883,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 6.71219277381897,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "2",
+      "position": [
+        1977,
+        842
+      ],
+      "timestamp": 6.892542839050293,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 7.599308490753174,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "3",
+      "position": [
+        2050,
+        982
+      ],
+      "timestamp": 7.798600912094116,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "4",
+      "position": [
+        2240,
+        987
+      ],
+      "timestamp": 8.533752918243408,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "4",
+      "position": [
+        2240,
+        987
+      ],
+      "timestamp": 8.722341299057007,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "5",
+      "position": [
+        2299,
+        847
+      ],
+      "timestamp": 9.468551874160767,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "5",
+      "position": [
+        2299,
+        847
+      ],
+      "timestamp": 9.64565896987915,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "6",
+      "position": [
+        2230,
+        712
+      ],
+      "timestamp": 10.361767530441284,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "6",
+      "position": [
+        2230,
+        712
+      ],
+      "timestamp": 10.568705797195435,
+      "duration": 50,
+      "executed": true,
+      "source": "adb"
+    },
+    {
+      "type": "tap",
+      "key": "a",
+      "position": [
+        237,
+        807
+      ],
+      "timestamp": 18.87047839164734,
+      "duration": 8005,
+      "executed": true,
+      "original_timestamp": 16.396050214767456,
+      "time_offset": 2.474428176879883,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "s",
+      "position": [
+        442,
+        917
+      ],
+      "timestamp": 83.62879991531372,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 81.15437173843384,
+      "time_offset": 2.474428176879883,
+      "source": "pc"
+    },
+    {
+      "type": "tap",
+      "key": "s",
+      "position": [
+        442,
+        917
+      ],
+      "timestamp": 84.06305813789368,
+      "duration": 50,
+      "executed": true,
+      "original_timestamp": 81.5886299610138,
+      "time_offset": 2.474428176879883,
+      "source": "pc"
+    }
+  ]
+}

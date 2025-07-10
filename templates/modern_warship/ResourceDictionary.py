@@ -4,3 +4,6 @@ enemy_faction = "./templates/enemy_faction.png"
 reverse = "./templates/reverse.png"
 gear2 = "./templates/gear2.png"
 gear1 = "./templates/gear1.png"
+multi_team_battle = "./templates/multi_team_battle.png"
+multi_team_battle2 = ((952, 88), (998, 153))
+multi_team_battle1 = "./templates/multi_team_battle1.png"
