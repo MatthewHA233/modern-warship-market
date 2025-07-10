@@ -435,13 +435,13 @@ class MainWindow(QMainWindow):
         
         add_layout.addWidget(QLabel("位置X:"), 1, 0)
         self.add_x_spinbox = QSpinBox()
-        self.add_x_spinbox.setRange(0, 2560)
+        self.add_x_spinbox.setRange(0, 2412)
         self.add_x_spinbox.setValue(500)
         add_layout.addWidget(self.add_x_spinbox, 1, 1)
         
         add_layout.addWidget(QLabel("位置Y:"), 1, 2)
         self.add_y_spinbox = QSpinBox()
-        self.add_y_spinbox.setRange(0, 1440)
+        self.add_y_spinbox.setRange(0, 1080)
         self.add_y_spinbox.setValue(500)
         add_layout.addWidget(self.add_y_spinbox, 1, 3)
         

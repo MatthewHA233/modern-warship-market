@@ -81,7 +81,7 @@ DEFAULT_PARAMS = {
 }
 
 # 屏幕中心点(用于视角控制的起始点)
-SCREEN_CENTER = (1280, 720)  # 假设2560x1440分辨率的中心点
+SCREEN_CENTER = (1206, 540)  # 假设2412x1080分辨率的中心点
 
 # ADB操作超时设置
 ADB_TIMEOUT = {

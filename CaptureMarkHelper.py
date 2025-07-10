@@ -17,7 +17,7 @@ save_file_path = "./templates/"
 pos_img_dict = "./templates/modern_warship/ResourceDictionary.py"
 
 # 动作类型 1=截图  2=标点  3=标线（取起终点组成向量） 4=标记区域
-action = 1
+action = 2
 
 # 图片来源替换输入你的did
 ADBHelper.screenCapture("Y57XRWSS8PH6W84L", "home_screen.png")
