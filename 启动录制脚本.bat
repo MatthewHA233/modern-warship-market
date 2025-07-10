@@ -1,32 +1,63 @@
 @echo off
 chcp 65001 >nul
-title 现代战舰录制脚本
+title 现代战舰录制器
 color 0E
 
 echo ========================================
-echo   现代战舰战斗录制器
+echo   现代战舰战斗录制器 v1.0
 echo ========================================
 echo.
 
 cd /d "%~dp0"
 
-echo 正在启动录制脚本...
-echo.
-
-python AgentScript\gui_interface.py
-
-if errorlevel 1 (
+:: 检查是否存在虚拟环境
+if exist "AgentScript\venv\Scripts\activate.bat" (
+    echo ✅ 检测到虚拟环境，正在激活...
+    call AgentScript\venv\Scripts\activate.bat
+    if errorlevel 1 (
+        echo ❌ 虚拟环境激活失败，尝试使用全局Python...
+        goto :use_global_python
+    )
+    echo ✅ 虚拟环境已激活
     echo.
-    echo ❌ 录制器启动失败！
+    echo 正在启动录制器...
+    python AgentScript\gui_interface.py
+) else (
+    echo 未检测到虚拟环境，使用全局Python...
+    :use_global_python
     echo.
-    echo 请检查：
-    echo 1. Python环境是否正确安装
-    echo 2. PyQt5是否已安装
-    echo 3. 运行 AgentScript\一键安装环境.bat
-    echo.
+    echo 正在启动录制器...
+    
+    :: 优先尝试py命令
+    py AgentScript\gui_interface.py >nul 2>&1
+    if not errorlevel 1 goto :script_ended
+    
+    :: 备选python命令
+    python AgentScript\gui_interface.py >nul 2>&1
+    if not errorlevel 1 goto :script_ended
+    
+    :: 都失败了
+    echo ❌ Python命令执行失败！
+    goto :error_handling
 )
 
+:script_ended
 echo.
+echo ✅ 录制器正常退出
+goto :end
+
+:error_handling
+echo.
+echo ❌ 录制器运行出错！
+echo.
+echo 可能的原因：
+echo 1. Python环境未正确安装
+echo 2. 依赖包未安装（请运行 AgentScript\一键安装环境.bat）
+echo 3. 手机未连接或USB调试未开启
+echo 4. 如果使用虚拟环境，请确保环境已正确创建
+echo.
+
+:end
 echo ================================
 echo 程序已退出，按任意键关闭窗口...
 pause >nul 
