@@ -193,7 +193,7 @@ class ImageMatcher:
             detection_region = (278, 32, 513, 123)
             
             # 检测胜利图标
-            is_victory, _ = self.match_template(screen, "shengli.png", detection_region, 0.4)
+            is_victory, _ = self.match_template(screen, "shengli.png", detection_region, 0.35)
             if is_victory:
                 print("检测到战斗结算画面")
                 return True

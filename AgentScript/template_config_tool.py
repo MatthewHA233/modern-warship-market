@@ -1216,7 +1216,7 @@ class ResultConfigStep(ConfigStep):
         
         super().__init__(
             "步骤3：结算界面配置",
-            "请进入战斗结算界面，然后配置胜利图标和奖励区域。VIP状态检测区域会自动配置。",
+            "请进入战斗结算界面，胜利图标和VIP状态检测将自动配置，您只需校准奖励区域。",
             parent
         )
         
@@ -1244,16 +1244,11 @@ class ResultConfigStep(ConfigStep):
         self.screenshot_btn.clicked.connect(self.on_screenshot)
         self.screenshot_btn.setStyleSheet("QPushButton { background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 14px; } QPushButton:hover { background-color: #1976D2; }")
         
-        self.config_victory_btn = QPushButton("配置胜利图标")
-        self.config_victory_btn.clicked.connect(self.config_victory_icon)
-        self.config_victory_btn.setEnabled(False)
-        
         self.calibrate_rewards_btn = QPushButton("校准奖励区域")
         self.calibrate_rewards_btn.clicked.connect(self.calibrate_reward_regions)
         self.calibrate_rewards_btn.setEnabled(False)
         
         button_layout.addWidget(self.screenshot_btn)
-        button_layout.addWidget(self.config_victory_btn)
         button_layout.addWidget(self.calibrate_rewards_btn)
         button_layout.addStretch()
         
@@ -1434,11 +1429,12 @@ class ResultConfigStep(ConfigStep):
         screenshot_path = self.take_screenshot()
         if screenshot_path:
             self.status_label.setText(f"截图成功：{os.path.basename(screenshot_path)}")
-            self.config_victory_btn.setEnabled(True)
             self.calibrate_rewards_btn.setEnabled(True)
             
             # 询问当前是否有VIP
             self.check_vip_status()
+            # 自动配置胜利图标
+            self.auto_config_victory_icon()
     
     def check_vip_status(self):
         """检查VIP状态并决定是否配置VIP检测"""
@@ -1500,47 +1496,45 @@ class ResultConfigStep(ConfigStep):
         else:
             QMessageBox.warning(self, "错误", "自动配置VIP状态检测区域失败")
     
-    def config_victory_icon(self):
-        """配置胜利图标"""
+    def auto_config_victory_icon(self):
+        """自动配置胜利图标"""
         if not self.current_screenshot:
-            QMessageBox.warning(self, "错误", "请先截取屏幕")
             return
         
-        selector = ImageSelector(self.current_screenshot, "选择胜利图标", self)
-        if selector.exec_() == QDialog.Accepted:
-            region = selector.get_selected_rect()
-            if region:
-                # 检查是否有旧模板
-                old_template_path = os.path.join(TEMPLATES_DIR, "shengli.png")
-                has_old_template = os.path.exists(old_template_path)
-                
-                # 创建临时文件保存旧模板
+        # 自动截取 (278, 32, 513, 123) 区域
+        region = (278, 32, 513, 123)
+        
+        # 检查是否有旧模板
+        old_template_path = os.path.join(TEMPLATES_DIR, "shengli.png")
+        has_old_template = os.path.exists(old_template_path)
+        
+        # 创建临时文件保存旧模板
+        old_temp_path = None
+        if has_old_template:
+            old_temp_path = os.path.join(CACHE_DIR, "temp_old_shengli.png")
+            try:
+                # 确保缓存目录存在
+                if not os.path.exists(CACHE_DIR):
+                    os.makedirs(CACHE_DIR)
+                import shutil
+                shutil.copy2(old_template_path, old_temp_path)
+            except:
                 old_temp_path = None
-                if has_old_template:
-                    old_temp_path = os.path.join(CACHE_DIR, "temp_old_shengli.png")
-                    try:
-                        # 确保缓存目录存在
-                        if not os.path.exists(CACHE_DIR):
-                            os.makedirs(CACHE_DIR)
-                        import shutil
-                        shutil.copy2(old_template_path, old_temp_path)
-                    except:
-                        old_temp_path = None
-                
-                if self.template_manager.crop_and_save_template(self.current_screenshot, "shengli.png", region):
-                    self.victory_configured = True
-                    self.victory_status_label.setText("✅ 胜利图标：已配置")
-                    self.config_data['victory_region'] = region
-                    
-                    # 显示对比图（如果有旧模板）
-                    if has_old_template and old_temp_path:
-                        self.show_template_comparison(old_temp_path, old_template_path, self.victory_example_label, "胜利图标")
-                    else:
-                        self.show_template_example(old_template_path, self.victory_example_label)
-                    
-                    self.check_completion()
-                else:
-                    QMessageBox.warning(self, "错误", "保存胜利图标模板失败")
+        
+        if self.template_manager.crop_and_save_template(self.current_screenshot, "shengli.png", region):
+            self.victory_configured = True
+            self.victory_status_label.setText("✅ 胜利图标：已配置")
+            self.config_data['victory_region'] = region
+            
+            # 显示对比图（如果有旧模板）
+            if has_old_template and old_temp_path:
+                self.show_template_comparison(old_temp_path, old_template_path, self.victory_example_label, "胜利图标")
+            else:
+                self.show_template_example(old_template_path, self.victory_example_label)
+            
+            self.check_completion()
+        else:
+            QMessageBox.warning(self, "错误", "保存胜利图标模板失败")
     
     def calibrate_reward_regions(self):
         """校准奖励区域"""
