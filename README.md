@@ -15,6 +15,18 @@
 
 除了市场工具外，本项目还包含强大的游戏自动化脚本工具：
 
+### 🚀 快速开始（新手推荐）
+
+**📋 [傻瓜式启动指南 - ★★★傻瓜式启动指南.md](./AgentScript/★★★傻瓜式启动指南.md)**
+
+**零基础用户推荐从这里开始**，提供完整的一站式配置流程：
+
+- ✅ **准备工作清单** - 硬件、软件准备要求
+- 💻 **环境自动安装** - 一键安装Python环境和依赖
+- 📱 **设备连接检查** - 自动检测设备状态和分辨率
+- 🎯 **模板配置工具** - 图形化界面配置不同分辨率适配
+- 🤖 **启动自动化** - 简单几步开始代肝
+
 ### 🤖 自动战斗脚本（核心功能）
 
 **📋 [完整自动战斗使用文档 - README_AUTO_BATTLE.md](./AgentScript/README_AUTO_BATTLE.md)**
@@ -114,6 +126,7 @@ yarn build
 
 ## 联系方式
 
-项目维护者 - 邮箱地址 - 网站
+项目维护者 MatthewHA233
+QQ 1528919811
 
 项目链接: [https://github.com/MatthewHA233/modern-warship-market](https://github.com/MatthewHA233/modern-warship-market)
