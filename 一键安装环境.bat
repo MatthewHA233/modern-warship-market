@@ -62,7 +62,7 @@ if "%env_choice%"=="1" (
     echo.
     echo 正在安装到全局Python环境...
     echo 注意：这将安装到全局Python环境，会占用大量C盘空间
-    %PYTHON_CMD% -m pip install -r requirements.txt
+    %PYTHON_CMD% -m pip install -r AgentScript/requirements.txt
 ) else if "%env_choice%"=="2" (
     echo.
     echo 正在创建虚拟环境...
@@ -97,7 +97,7 @@ if "%env_choice%"=="1" (
     python -m pip install --upgrade pip
     
     echo 安装项目依赖到虚拟环境...
-    pip install -r requirements.txt
+    pip install -r AgentScript/requirements.txt
     
     echo ✅ 虚拟环境配置完成
     echo.
@@ -110,7 +110,7 @@ if "%env_choice%"=="1" (
     echo 无效选择，默认使用全局环境...
     echo 正在安装到全局Python环境...
     echo 注意：这将安装到全局Python环境，会占用大量C盘空间
-    %PYTHON_CMD% -m pip install -r requirements.txt
+    %PYTHON_CMD% -m pip install -r AgentScript/requirements.txt
 )
 
 echo.

@@ -158,7 +158,7 @@ class ImageMatcher:
                 # 多队混战模式：只检测战斗状态
                 # 使用不同的检测区域和模板图片检测多队混战
                 multi_team_region = (952, 88, 998, 153)
-                is_multi_team, _ = self.match_template(screen, "multi_team_battle.png", multi_team_region, 0.4)
+                is_multi_team, _ = self.match_template(screen, "multi_team_battle.png", multi_team_region, 0.2)
                 if is_multi_team:
                     return "fighting_attack"  # 多队混战也当作进攻模式处理
             

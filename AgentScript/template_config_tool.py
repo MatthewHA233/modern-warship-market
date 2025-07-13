@@ -1441,7 +1441,7 @@ class ResultConfigStep(ConfigStep):
         reply = QMessageBox.question(
             self,
             "VIP状态确认",
-            "请确认当前游戏状态：\n\n您当前是否拥有VIP？\n\n• 选择\"是\"：跳过VIP状态检测配置\n• 选择\"否\"：配置VIP状态检测模板",
+            "请确认当前游戏状态（★谨慎选择，瞎点代肝脚本报错★）：\n\n★您当前是否拥有VIP？★\n\n• 选择\"是\"：跳过VIP状态检测配置\n• 选择\"否\"：配置VIP状态检测模板",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
